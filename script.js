@@ -37,14 +37,14 @@ const waveformVisualization = document.querySelector('.waveform-visualization');
 // Audio Recording System (Composition pattern)
 const AudioRecordingSystem = () => {
     // Private members
-    let mediaRecorder;
-    let audioChunks = [];
-    let recordingStartTime;
-    let recordingTimerInterval;
-    let audioContext;
-    let analyser;
+let mediaRecorder;
+let audioChunks = [];
+let recordingStartTime;
+let recordingTimerInterval;
+let audioContext;
+let analyser;
     let stream;
-    let isRecording = false;
+let isRecording = false;
     let autoSendInterval;
     let sendIntervalMs = 10000; // Default 10 seconds
     let isAutoSendEnabled = true;
@@ -683,27 +683,54 @@ async function getAgentResponse(element, text, agentType) {
 // Initialize visualizer
 let visualizerInstance;
 try {
-    visualizerInstance = new AdvancedVisualizer(visualizer, {
-        mode: 'waves+particles',
-        visualMode: 'spectrum',
-        particleCount: 150, 
-        particleSize: 3,
-        particleSpeed: 0.8,
-        murmurmationStrength: 0.4,
-        glowEffect: true,
-        backgroundColor: '#1a1a1a',
-        smoothingTimeConstant: 0.8,
-        gradientColors: [
-            { stop: 0, color: '#dc3545' },  // Changed to match red theme
-            { stop: 0.5, color: '#ff6b81' },
-            { stop: 1, color: '#dc3545' }
-        ],
-        waveThickness: 3
+    // Import TentaclesVisualizer
+    import('./tentacles-visualizer.js').then(module => {
+        const { TentaclesVisualizer } = module;
+        
+        // Create visualizer based on selected mode
+        const mode = visualizerMode.value;
+        if (mode === 'tentacles') {
+            visualizerInstance = new TentaclesVisualizer(visualizer, {
+                numTentacles: 8,
+                baseColor: [220, 53, 69], // Match the red theme
+                tentacleWidth: 6,
+                segments: 20,
+                cohesionStrength: 0.01,
+                centerAttraction: 0.0005,
+                noiseSpeed: 0.01,
+                volumeSmoothing: 0.1
+            });
+        } else {
+            visualizerInstance = new AdvancedVisualizer(visualizer, {
+                mode: 'waves+particles',
+                visualMode: mode,
+                particleCount: 150,
+                particleSize: 3,
+                particleSpeed: 0.8,
+                murmurmationStrength: 0.4,
+                glowEffect: true,
+                backgroundColor: '#1a1a1a',
+                smoothingTimeConstant: 0.8,
+                gradientColors: [
+                    { stop: 0, color: '#dc3545' },
+                    { stop: 0.5, color: '#ff6b81' },
+                    { stop: 1, color: '#dc3545' }
+                ],
+                waveThickness: 3
+            });
+        }
+        console.log('Visualizer initialized successfully');
+    }).catch(error => {
+        console.error('Error importing TentaclesVisualizer:', error);
+        createFallbackVisualizer();
     });
-    console.log('Visualizer initialized successfully');
 } catch (error) {
     console.error('Error initializing visualizer:', error);
-    // Create fallback visualizer
+    createFallbackVisualizer();
+}
+
+// Create fallback visualizer
+function createFallbackVisualizer() {
     visualizerInstance = {
         setupAudioAnalyser: function() {},
         stop: function() {},

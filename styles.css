@@ -1303,4 +1303,128 @@ textarea.form-control {
         right: 20px;
         min-width: auto;
     }
+}
+
+/* Agent Content Styling */
+.agent-content p {
+    margin-bottom: 10px;
+}
+
+.agent-content strong {
+    color: var(--text);
+    font-weight: 600;
+}
+
+.agent-content .rating {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background-color: rgba(var(--primary-rgb), 0.2);
+    margin: 0 2px;
+}
+
+/* Улучшенные стили для карточек агентов */
+.agent-card {
+    background-color: var(--card-bg);
+    border-left: 4px solid var(--secondary);
+    border-radius: 6px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    overflow: hidden;
+}
+
+.agent-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.agent-card .agent-header {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+}
+
+.agent-card .agent-content {
+    padding: 0 15px;
+    font-size: 14px;
+    color: var(--text-secondary);
+    transition: all 0.3s ease;
+}
+
+.agent-card .agent-content.expanded {
+    color: var(--text);
+    background-color: rgba(255, 255, 255, 0.02);
+}
+
+/* Улучшенные стили для типов агентов */
+.agent-card.secondary .agent-icon {
+    background-color: var(--secondary);
+}
+
+.agent-card.primary .agent-icon {
+    background-color: var(--primary);
+}
+
+.agent-card.tertiary .agent-icon {
+    background-color: var(--tertiary);
+}
+
+.agent-card.quaternary .agent-icon {
+    background-color: var(--quaternary);
+}
+
+.agent-card.quinary .agent-icon {
+    background-color: var(--quinary);
+}
+
+.agent-card.senary .agent-icon {
+    background-color: var(--senary);
+}
+
+.agent-card.custom .agent-icon {
+    background-color: var(--custom);
+}
+
+/* Анимация для подсветки важных частей ответа */
+@keyframes highlight-pulse {
+    0% {
+        background-color: transparent;
+    }
+    50% {
+        background-color: rgba(var(--primary-rgb), 0.1);
+    }
+    100% {
+        background-color: transparent;
+    }
+}
+
+.agent-content strong {
+    position: relative;
+    z-index: 1;
+}
+
+.agent-content strong::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -3px;
+    right: -3px;
+    bottom: 0;
+    background-color: transparent;
+    border-radius: 3px;
+    z-index: -1;
+    animation: highlight-pulse 2s ease-out;
+}
+
+/* Улучшение внешнего вида списков */
+.agent-content ol, .agent-content ul {
+    padding-left: 25px;
+    margin: 10px 0;
+}
+
+.agent-content li {
+    margin-bottom: 5px;
 } 

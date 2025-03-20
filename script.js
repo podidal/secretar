@@ -8,7 +8,7 @@ const playButton = document.getElementById('playButton');
 const recognizeButton = document.getElementById('recognizeButton');
 const audioPlayer = document.getElementById('audioPlayer');
 const summaryText = document.getElementById('summary-text');
-const dialogModeToggle = document.getElementById('dialogModeToggle');
+const dialogContent = document.getElementById('dialog-content');
 
 // DOM Elements - Agent Panel
 const addAgentBtn = document.getElementById('add-agent-btn');
@@ -408,11 +408,11 @@ const AudioRecordingSystem = () => {
         start: function(startTime) {
             recordingTimerInterval = setInterval(() => {
                 const elapsedTime = Date.now() - startTime;
-                const seconds = Math.floor(elapsedTime / 1000);
-                const minutes = Math.floor(seconds / 60);
-                const remainingSeconds = seconds % 60;
-                
-                recordingTimer.textContent = `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+    const seconds = Math.floor(elapsedTime / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    
+    recordingTimer.textContent = `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
             }, 1000);
         },
         
@@ -464,11 +464,11 @@ const AudioRecordingSystem = () => {
         
         animateWaveform: function() {
             if (!analyser || !isRecording) return;
-            
-            // Get frequency data
+    
+    // Get frequency data
             const dataArray = new Uint8Array(analyser.frequencyBinCount);
-            analyser.getByteFrequencyData(dataArray);
-            
+    analyser.getByteFrequencyData(dataArray);
+    
             // Update the waveform visualization
             this.updateWaveform(dataArray);
             
@@ -609,6 +609,24 @@ const AudioRecordingSystem = () => {
                     // Show selected tab content
                     const tabId = tab.getAttribute('data-tab');
                     document.getElementById(`${tabId}-tab`).style.display = 'block';
+                    
+                    // Если выбрана вкладка диалога, попробуем обработать текущий текст
+                    if (tabId === 'dialog') {
+                        const currentText = document.querySelector('.conversation-entry .text')?.textContent;
+                        if (currentText) {
+                            DialogProcessor.processText(currentText).then(result => {
+                                if (result && result.html) {
+                                    document.getElementById('dialog-content').innerHTML = result.html;
+                                } else {
+                                    document.getElementById('dialog-content').innerHTML = 
+                                        '<div class="dialog-empty">Диалог не обнаружен. Попробуйте записать разговор с вопросами и ответами.</div>';
+                                }
+                            });
+                        } else {
+                            document.getElementById('dialog-content').innerHTML = 
+                                '<div class="dialog-empty">Нет текста для анализа. Начните запись, чтобы распознать диалог.</div>';
+                        }
+                    }
                 });
             });
             
@@ -666,21 +684,6 @@ const AudioRecordingSystem = () => {
 
             // Theme toggle
             themeToggle.addEventListener('change', toggleTheme);
-
-            // Set up dialog mode toggle
-            if (dialogModeToggle) {
-                dialogModeToggle.addEventListener('change', () => {
-                    const isDialogMode = dialogModeToggle.checked;
-                    document.body.setAttribute('data-dialog-mode', isDialogMode ? 'true' : 'false');
-                    localStorage.setItem('dialogMode', isDialogMode ? 'true' : 'false');
-                    showNotification(isDialogMode ? 'Режим диалога включен' : 'Режим диалога выключен', 'info');
-                });
-                
-                // Initialize dialog mode from localStorage
-                const savedDialogMode = localStorage.getItem('dialogMode') === 'true';
-                dialogModeToggle.checked = savedDialogMode;
-                document.body.setAttribute('data-dialog-mode', savedDialogMode ? 'true' : 'false');
-            }
         },
         
         startRecording: async function() {
@@ -863,7 +866,334 @@ function blobToBase64(blob) {
     });
 }
 
-// Transcribe audio using Google Gemini API
+// Добавим функцию для копирования диалога в JSON формате
+function addCopyJsonButton(dialogData) {
+    // Если уже есть кнопка, удаляем её
+    const existingButton = document.getElementById('copy-json-btn');
+    if (existingButton) {
+        existingButton.remove();
+    }
+    
+    // Если нет данных, выходим
+    if (!dialogData || dialogData.length === 0) return;
+    
+    // Создаем кнопку
+    const copyButton = document.createElement('button');
+    copyButton.id = 'copy-json-btn';
+    copyButton.className = 'copy-json-btn';
+    copyButton.innerHTML = '<i class="fas fa-copy"></i> Копировать JSON';
+    
+    // Добавляем обработчик
+    copyButton.addEventListener('click', () => {
+        const jsonString = JSON.stringify(dialogData, null, 2);
+        navigator.clipboard.writeText(jsonString)
+            .then(() => {
+                copyButton.innerHTML = '<i class="fas fa-check"></i> Скопировано';
+                showNotification('JSON скопирован в буфер обмена', 'success');
+                
+                // Через 2 секунды возвращаем исходный текст
+                setTimeout(() => {
+                    copyButton.innerHTML = '<i class="fas fa-copy"></i> Копировать JSON';
+                }, 2000);
+            })
+            .catch(err => {
+                console.error('Ошибка при копировании JSON:', err);
+                showNotification('Ошибка при копировании', 'error');
+            });
+    });
+    
+    // Добавляем кнопку перед контейнером диалога
+    dialogContent.insertAdjacentElement('beforebegin', copyButton);
+}
+
+// Компонент для рендеринга диалога
+const dialogRenderer = {
+    renderDialog: function(dialogData) {
+        // Если нет данных диалога, выходим
+        if (!dialogData || dialogData.length === 0) return '';
+        
+        // Формируем HTML для диалога
+        let dialogHTML = '<div class="dialog-container">';
+        
+        dialogData.forEach(entry => {
+            const speaker = entry.speaker || 'Неизвестный';
+            const text = entry.text || '';
+            
+            // Определяем класс для реплики в зависимости от говорящего
+            const bubbleClass = speaker.toLowerCase().includes('я') || 
+                               speaker.toLowerCase().includes('мой') || 
+                               speaker.toLowerCase().includes('me') || 
+                               speaker.toLowerCase().includes('i') 
+                               ? 'dialog-bubble-right' : 'dialog-bubble-left';
+            
+            // Добавляем реплику
+            dialogHTML += `
+                <div class="dialog-entry ${bubbleClass}">
+                    <div class="dialog-speaker">${speaker}</div>
+                    <div class="dialog-text">${text}</div>
+                </div>
+            `;
+        });
+        
+        dialogHTML += '</div>';
+        return dialogHTML;
+    },
+    
+    renderJsonPreview: function(dialogData) {
+        if (!dialogData || dialogData.length === 0) return '';
+        
+        const jsonString = JSON.stringify(dialogData, null, 2);
+        return `<div class="json-preview">${jsonString}</div>`;
+    }
+};
+
+// Функция для добавления элементов управления диалогом
+function setupDialogControls(dialogData) {
+    // Удаляем существующие элементы, если они есть
+    const existingControls = document.querySelector('.dialog-controls');
+    if (existingControls) {
+        existingControls.remove();
+    }
+    
+    // Если нет данных, выходим
+    if (!dialogData || dialogData.length === 0) return;
+    
+    // Создаем контейнер для элементов управления
+    const controlsContainer = document.createElement('div');
+    controlsContainer.className = 'dialog-controls';
+    
+    // Создаем переключатель режимов отображения
+    const viewToggle = document.createElement('div');
+    viewToggle.className = 'dialog-view-toggle';
+    viewToggle.innerHTML = `
+        <button class="dialog-view-btn active" data-view="dialog">
+            <i class="fas fa-comments"></i> Диалог
+        </button>
+        <button class="dialog-view-btn" data-view="json">
+            <i class="fas fa-code"></i> JSON
+        </button>
+    `;
+    
+    // Создаем кнопку копирования JSON
+    const copyButton = document.createElement('button');
+    copyButton.className = 'copy-json-btn';
+    copyButton.innerHTML = '<i class="fas fa-copy"></i> Копировать JSON';
+    
+    // Добавляем элементы в контейнер
+    controlsContainer.appendChild(viewToggle);
+    controlsContainer.appendChild(copyButton);
+    
+    // Добавляем контейнер перед содержимым диалога
+    dialogContent.insertAdjacentElement('beforebegin', controlsContainer);
+    
+    // Обработчик для переключения режимов отображения
+    const viewButtons = viewToggle.querySelectorAll('.dialog-view-btn');
+    viewButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            // Активируем нажатую кнопку
+            viewButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            
+            // Определяем выбранный режим
+            const viewMode = button.getAttribute('data-view');
+            
+            // Обновляем содержимое в зависимости от режима
+            if (viewMode === 'dialog') {
+                dialogContent.innerHTML = dialogRenderer.renderDialog(dialogData);
+            } else if (viewMode === 'json') {
+                dialogContent.innerHTML = dialogRenderer.renderJsonPreview(dialogData);
+            }
+        });
+    });
+    
+    // Обработчик для копирования JSON
+    copyButton.addEventListener('click', () => {
+        const jsonString = JSON.stringify(dialogData, null, 2);
+        navigator.clipboard.writeText(jsonString)
+            .then(() => {
+                copyButton.innerHTML = '<i class="fas fa-check"></i> Скопировано';
+                showNotification('JSON скопирован в буфер обмена', 'success');
+                
+                // Через 2 секунды возвращаем исходный текст
+                setTimeout(() => {
+                    copyButton.innerHTML = '<i class="fas fa-copy"></i> Копировать JSON';
+                }, 2000);
+            })
+            .catch(err => {
+                console.error('Ошибка при копировании JSON:', err);
+                showNotification('Ошибка при копировании', 'error');
+            });
+    });
+}
+
+// Обновляем DialogProcessor для использования новых элементов управления
+const DialogProcessor = (function() {
+    // Приватные переменные
+    let dialogHistory = [];
+    let lastProcessedText = '';
+    
+    // Компонент для парсинга диалога
+    const dialogParser = {
+        parseDialogFromText: async function(text) {
+            try {
+                // Формируем запрос к API для распознавания диалога
+                const payload = {
+                    contents: [
+                        {
+                            parts: [
+                                {
+                                    text: `Ты эксперт по распознаванию диалогов. Распознай диалог в следующем тексте и структурируй его. 
+                                    
+Правила распознавания:
+1. Выдели все высказывания разных людей или персонажей.
+2. Определи говорящего (если указан) и его реплику.
+3. Объедини несколько предложений одного говорящего в одну реплику.
+4. Игнорируй описательные части, которые не являются речью персонажей.
+5. Верни ТОЛЬКО массив JSON объектов с полями "speaker" и "text".
+6. Не добавляй никаких пояснений или комментариев.
+7. Если диалога нет, верни пустой массив [].
+
+Формат ответа должен быть ТОЛЬКО в виде JSON массива вида:
+[
+  {"speaker": "Имя1", "text": "Текст реплики 1"},
+  {"speaker": "Имя2", "text": "Текст реплики 2"},
+  ...
+]
+
+Текст для распознавания: "${text}"`
+                                }
+                            ]
+                        }
+                    ],
+                    generation_config: {
+                        temperature: 0.1,
+                        top_p: 0.95,
+                        top_k: 40,
+                        max_output_tokens: 500
+                    }
+                };
+                
+                // Отправляем запрос к Gemini API
+                const response = await fetch(`${GEMINI_API_URL}/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                const responseText = data.candidates[0].content.parts[0].text;
+                
+                // Извлекаем JSON из ответа
+                let jsonString = responseText;
+                // Удаляем возможные markdown обозначения для кода
+                jsonString = jsonString.replace(/```json/g, '').replace(/```/g, '').trim();
+                
+                try {
+                    // Парсим JSON
+                    const dialogData = JSON.parse(jsonString);
+                    return dialogData;
+                } catch (jsonError) {
+                    console.error('Error parsing JSON response:', jsonError);
+                    console.log('Raw response:', jsonString);
+                    
+                    // Попытка исправить возможные проблемы с JSON форматированием
+                    try {
+                        // Иногда API возвращает JSON без квадратных скобок
+                        if (!jsonString.trim().startsWith('[')) {
+                            jsonString = '[' + jsonString + ']';
+                        }
+                        
+                        // Иногда в JSON есть лишние запятые
+                        jsonString = jsonString.replace(/,\s*}/g, '}').replace(/,\s*\]/g, ']');
+                        
+                        return JSON.parse(jsonString);
+                    } catch (fallbackError) {
+                        console.error('Fallback JSON parsing failed:', fallbackError);
+                        return [];
+                    }
+                }
+            } catch (error) {
+                console.error('Error parsing dialog:', error);
+                return [];
+            }
+        }
+    };
+    
+    // Компонент для управления историей диалогов
+    const dialogHistoryManager = {
+        addToHistory: function(dialogData) {
+            if (dialogData && dialogData.length > 0) {
+                // Добавляем метку времени к диалогу
+                const dialogEntry = {
+                    timestamp: new Date(),
+                    dialog: dialogData
+                };
+                dialogHistory.push(dialogEntry);
+                
+                // Ограничиваем историю до 10 последних диалогов
+                if (dialogHistory.length > 10) {
+                    dialogHistory.shift();
+                }
+            }
+        },
+        
+        getHistory: function() {
+            return [...dialogHistory];
+        }
+    };
+    
+    // Публичные методы
+    return {
+        processText: async function(text) {
+            if (!text || text === lastProcessedText) return null;
+            
+            lastProcessedText = text;
+            showStatus('Распознавание диалога...');
+            
+            // Распознаем диалог
+            const dialogData = await dialogParser.parseDialogFromText(text);
+            
+            // Добавляем в историю
+            dialogHistoryManager.addToHistory(dialogData);
+            
+            // Формируем HTML
+            const dialogHTML = dialogRenderer.renderDialog(dialogData);
+            
+            // Добавляем элементы управления
+            if (dialogData && dialogData.length > 0) {
+                setTimeout(() => setupDialogControls(dialogData), 100);
+            }
+            
+            return {
+                html: dialogHTML,
+                data: dialogData
+            };
+        },
+        
+        renderHistory: function() {
+            const history = dialogHistoryManager.getHistory();
+            let historyHTML = '';
+            
+            history.forEach(entry => {
+                const timestamp = entry.timestamp.toLocaleTimeString();
+                historyHTML += `<div class="dialog-history-entry">
+                    <div class="dialog-timestamp">${timestamp}</div>
+                    ${dialogRenderer.renderDialog(entry.dialog)}
+                </div>`;
+            });
+            
+            return historyHTML;
+        }
+    };
+})();
+
+// Обновляем функцию transcribeAudio для использования DialogProcessor
 async function transcribeAudio(audioBlob) {
     try {
         // Check if we already have a transcription in progress
@@ -880,20 +1210,13 @@ async function transcribeAudio(audioBlob) {
         // Convert audio blob to base64
         const audioBase64 = await blobToBase64(audioBlob);
         
-        // Determine if dialog mode is active
-        const isDialogMode = dialogModeToggle && dialogModeToggle.checked;
-        
-        // Prepare the request payload with appropriate prompt based on mode
-        const promptText = isDialogMode ? 
-            "Пожалуйста, расшифруй следующую аудиозапись на русском языке. Определи диалог и представь его в JSON формате. Каждое высказывание должно иметь поля 'speaker' (говорящий) и 'text' (текст). Пример: [{\"speaker\": \"Человек 1\", \"text\": \"Привет\"}, {\"speaker\": \"Человек 2\", \"text\": \"Здравствуйте\"}]. Если говорящий не меняется в последовательных высказываниях, все равно создай отдельные объекты для каждого высказывания." :
-            "Пожалуйста, расшифруй следующую аудиозапись на русском языке. Дай только текст без дополнительных комментариев.";
-        
+        // Prepare the request payload
         const payload = {
             contents: [
                 {
                     parts: [
                         {
-                            text: promptText
+                            text: "Пожалуйста, расшифруй следующую аудиозапись на русском языке. Дай только текст без дополнительных комментариев."
                         },
                         {
                             inline_data: {
@@ -935,34 +1258,19 @@ async function transcribeAudio(audioBlob) {
         // Extract the transcribed text
         const transcribedText = data.candidates[0].content.parts[0].text;
         
-        // Process differently based on mode
-        if (isDialogMode) {
-            try {
-                // Try to parse the JSON from the transcribed text
-                let dialogJson;
-                // Extract JSON from text (in case API returns additional text)
-                const jsonMatch = transcribedText.match(/\[\s*{.*}\s*\]/s);
-                
-                if (jsonMatch) {
-                    dialogJson = JSON.parse(jsonMatch[0]);
-                } else {
-                    // If no JSON pattern found, try parsing the whole text
-                    dialogJson = JSON.parse(transcribedText);
-                }
-                
-                // Update the conversation with dialog format
-                updateDialogView(dialogJson);
-            } catch (jsonError) {
-                console.error('Error parsing dialog JSON:', jsonError);
-                // Fallback to regular text view if parsing fails
-                updateConversationText(`Не удалось разобрать диалог. Исходный текст: ${transcribedText}`);
+        // Update the conversation text
+        updateConversationText(transcribedText);
+        
+        // Обрабатываем текст как диалог, если активна вкладка "Диалог"
+        const dialogTab = document.querySelector('.tab[data-tab="dialog"]');
+        if (dialogTab && dialogTab.classList.contains('active')) {
+            const dialogResult = await DialogProcessor.processText(transcribedText);
+            if (dialogResult && dialogResult.html) {
+                document.getElementById('dialog-content').innerHTML = dialogResult.html;
             }
-        } else {
-            // Regular mode - just update the conversation text
-            updateConversationText(transcribedText);
         }
         
-        // Process text with agents - send the plain text even in dialog mode
+        // Process text with agents
         await AgentManager.processWithAgents(transcribedText);
         
         // Update status
@@ -980,7 +1288,7 @@ async function transcribeAudio(audioBlob) {
     }
 }
 
-// Update conversation text in timeline (для стандартного режима)
+// Update conversation text in timeline
 function updateConversationText(text) {
     if (!text.trim()) return; // Игнорировать пустой текст
     
@@ -1028,79 +1336,6 @@ function updateConversationText(text) {
     
     // Scroll to newest message
     timelineItem.scrollIntoView({ behavior: 'smooth', block: 'end' });
-    conversationText.scrollTop = conversationText.scrollHeight;
-}
-
-// Update conversation with dialog format
-function updateDialogView(dialogData) {
-    if (!dialogData || !Array.isArray(dialogData) || dialogData.length === 0) {
-        return;
-    }
-    
-    // Get current timestamp
-    const timestamp = new Date().toLocaleTimeString();
-    const shortTime = timestamp.replace(/:\d\d\s/, ' ');
-    
-    // Clear timeline before adding new dialog
-    conversationTimeline.innerHTML = '';
-    
-    // Create colors mapping for speakers to ensure consistent colors
-    const speakerColors = {};
-    const colorClasses = ['primary', 'secondary', 'tertiary', 'quaternary', 'quinary', 'senary'];
-    let colorIndex = 0;
-    
-    // Create timeline items for each dialog entry
-    dialogData.forEach(entry => {
-        // Assign color to speaker if not already assigned
-        if (!speakerColors[entry.speaker]) {
-            speakerColors[entry.speaker] = colorClasses[colorIndex % colorClasses.length];
-            colorIndex++;
-        }
-        
-        const timelineItem = document.createElement('div');
-        timelineItem.className = 'timeline-item';
-        
-        // Add entry with speaker and text
-        timelineItem.innerHTML = `
-            <div class="timestamp">${shortTime}</div>
-            <div class="message-block ${speakerColors[entry.speaker]}">
-                <div class="speaker-name">${entry.speaker}</div>
-                <p>${entry.text}</p>
-            </div>
-        `;
-        
-        // Add animation class
-        timelineItem.classList.add('message-fade-in');
-        
-        // Append to timeline
-        conversationTimeline.appendChild(timelineItem);
-    });
-    
-    // Add updating effect to timeline
-    conversationTimeline.classList.add('updating');
-    setTimeout(() => {
-        conversationTimeline.classList.remove('updating');
-    }, 1000);
-    
-    // Clear text view before adding new content
-    conversationText.innerHTML = '';
-    
-    // Create formatted text for the text view
-    const formattedText = dialogData.map(entry => `
-        <div class="conversation-entry message-fade-in">
-            <div class="timestamp">${timestamp}</div>
-            <div class="speaker-label">${entry.speaker}:</div>
-            <div class="text">${entry.text}</div>
-        </div>
-    `).join('');
-    
-    conversationText.insertAdjacentHTML('beforeend', formattedText);
-    
-    // Scroll to newest message
-    const lastTimelineItem = conversationTimeline.lastChild;
-    if (lastTimelineItem) {
-        lastTimelineItem.scrollIntoView({ behavior: 'smooth', block: 'end' });
-    }
     conversationText.scrollTop = conversationText.scrollHeight;
 }
 
@@ -1231,6 +1466,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // Инициализация системы записи
     const recordingSystem = AudioRecordingSystem();
     recordingSystem.init();
+    
+    // Обработчик переключения на вкладку диалога
+    document.querySelector('.tab[data-tab="dialog"]')?.addEventListener('click', async () => {
+        const currentText = document.querySelector('.conversation-entry .text')?.textContent;
+        if (currentText) {
+            const dialogResult = await DialogProcessor.processText(currentText);
+            if (dialogResult && dialogResult.html) {
+                document.getElementById('dialog-content').innerHTML = dialogResult.html;
+            }
+        }
+    });
 });
 
 // Проверка DOM-элементов перед использованием

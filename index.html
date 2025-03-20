@@ -52,33 +52,26 @@
             <section class="conversation-panel">
                 <div class="panel-header">
                     <div class="tabs-container">
-                        <div class="tab active" data-tab="conversation">Беседа</div>
-                        <div class="tab" data-tab="text">Весь текст</div>
-                        <div class="tab" data-tab="summary">Итоги</div>
+                        <button class="tab active" data-tab="timeline">Таймлайн</button>
+                        <button class="tab" data-tab="text">Весь текст</button>
+                        <button class="tab" data-tab="dialog">Диалог</button>
+                        <button class="tab" data-tab="summary">Итоги</button>
                     </div>
                 </div>
                 
-                <!-- Conversation Timeline Tab -->
-                <div id="conversation-tab" class="timeline-container">
-                    <div id="conversationTimeline" class="conversation-timeline">
-                        <!-- Timeline items will be added here dynamically -->
+                <!-- Timeline and conversation text containers -->
+                <div class="timeline-containers">
+                    <div id="timeline-tab" class="timeline-container">
+                        <div id="conversationTimeline" class="conversation-timeline"></div>
                     </div>
-                </div>
-                
-                <!-- Full Text Tab -->
-                <div id="text-tab" class="timeline-container" style="display: none;">
-                    <div id="conversationText" class="conversation-full-text">
-                        <!-- Full text will be added here dynamically -->
+                    <div id="text-tab" class="timeline-container" style="display: none;">
+                        <div id="conversationText" class="conversation-text"></div>
                     </div>
-                </div>
-                
-                <!-- Summary Tab -->
-                <div id="summary-tab" class="timeline-container" style="display: none;">
-                    <div class="summary-container">
-                        <h3>Итоги разговора</h3>
-                        <div id="summary-text" class="summary-content">
-                            Здесь будет отображаться краткое резюме разговора после его завершения.
-                        </div>
+                    <div id="dialog-tab" class="timeline-container" style="display: none;">
+                        <div id="dialog-content" class="dialog-content"></div>
+                    </div>
+                    <div id="summary-tab" class="timeline-container" style="display: none;">
+                        <div id="summary-text" class="summary-text">Ожидание данных...</div>
                     </div>
                 </div>
             </section>
@@ -138,49 +131,39 @@
     <!-- Settings Panel (Hidden by default) -->
     <div id="settings-panel" class="settings-panel">
         <div class="settings-header">
-            <h3>Настройки</h3>
-            <button id="close-settings" class="close-btn"><i class="fas fa-times"></i></button>
+            <h2>Настройки</h2>
+            <button id="close-settings">
+                <i class="fas fa-times"></i>
+            </button>
         </div>
+        
         <div class="settings-content">
-            <div class="settings-group">
-                <h4>Частота отправки</h4>
-                <div class="slider-container">
-                    <input type="range" id="sendFrequency" min="5" max="60" step="5" value="10">
-                    <span id="frequencyValue">10</span> сек
+            <div class="settings-section">
+                <h3>Запись</h3>
+                <div class="setting-item">
+                    <label>Частота отправки (секунды)</label>
+                    <div class="slider-container">
+                        <input type="range" id="sendFrequency" class="slider" min="5" max="60" value="10">
+                        <span id="frequencyValue">10</span>
+                    </div>
                 </div>
-            </div>
-            
-            <div class="settings-group">
-                <h4>Автоматическая отправка</h4>
-                <div class="toggle-container">
+                <div class="setting-item">
+                    <label>Автоматическая отправка</label>
                     <label class="switch">
                         <input type="checkbox" id="autoSendToggle" checked>
                         <span class="slider round"></span>
                     </label>
-                    <span>Включить автоматическую отправку</span>
                 </div>
             </div>
-            
-            <div class="settings-group">
-                <h4>Режим диалога</h4>
-                <div class="toggle-container dialog-mode-toggle">
-                    <label class="switch">
-                        <input type="checkbox" id="dialogModeToggle">
-                        <span class="slider round"></span>
-                    </label>
-                    <span>Распознавать диалог между говорящими</span>
-                </div>
-                <p class="settings-description">При включении этого режима система будет пытаться распознать диалог и разделить его на реплики разных говорящих.</p>
-            </div>
-            
-            <div class="settings-group">
-                <h4>Тема оформления</h4>
-                <div class="toggle-container">
+            <div class="settings-section">
+                <h3>Внешний вид</h3>
+                <div class="setting-item">
+                    <label>Тема</label>
                     <label class="switch">
                         <input type="checkbox" id="themeToggle">
                         <span class="slider round"></span>
+                        <span class="switch-label" id="themeLabel">Тёмная</span>
                     </label>
-                    <span id="themeLabel">Тёмная</span>
                 </div>
             </div>
         </div>

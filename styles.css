@@ -32,13 +32,6 @@
     --success: #4caf50;
     --warning: #ff9800;
     --info: #2196f3;
-
-    /* New colors for dialog mode */
-    --secondary-rgb: 3, 169, 244;   /* Light Blue */
-    --tertiary-rgb: 255, 152, 0;    /* Orange */
-    --quaternary-rgb: 233, 30, 99;  /* Pink */
-    --quinary-rgb: 255, 87, 34;     /* Deep Orange */
-    --senary-rgb: 76, 175, 80;      /* Green */
 }
 
 /* Light Theme Colors */
@@ -1312,84 +1305,238 @@ textarea.form-control {
     }
 }
 
-/* Стили для режима диалога */
-[data-dialog-mode="true"] .timeline-container {
-    --dialog-spacing: 8px;
+/* Dialog styling */
+.dialog-content {
+    height: 100%;
+    padding: 10px;
+    overflow-y: auto;
+    font-size: 14px;
 }
 
-.speaker-name {
-    font-weight: 600;
-    font-size: 0.9em;
-    margin-bottom: 4px;
-    color: rgba(255, 255, 255, 0.9);
+.dialog-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 10px 0;
 }
 
-.speaker-label {
-    font-weight: 600;
-    color: var(--primary);
-    margin-bottom: 4px;
-    font-size: 0.95em;
+.dialog-empty {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    color: var(--text-secondary);
+    font-style: italic;
+    text-align: center;
+    padding: 20px;
 }
 
-/* Цвета для разных говорящих в диалоге */
-.message-block.secondary {
-    border-left-color: var(--secondary-agent);
-    background-color: rgba(var(--secondary-rgb), 0.1);
+.dialog-entry {
+    max-width: 80%;
+    position: relative;
+    margin: 5px 0;
+    animation: fadeInUp 0.4s ease-out forwards;
 }
 
-.message-block.tertiary {
-    border-left-color: var(--tertiary-agent);
-    background-color: rgba(var(--tertiary-rgb), 0.1);
+.dialog-bubble-left {
+    align-self: flex-start;
+    background-color: var(--background-lighter);
+    border-radius: 15px 15px 15px 0;
+    margin-right: auto;
 }
 
-.message-block.quaternary {
-    border-left-color: var(--quaternary-agent);
-    background-color: rgba(var(--quaternary-rgb), 0.1);
+.dialog-bubble-right {
+    align-self: flex-end;
+    background-color: var(--primary);
+    border-radius: 15px 15px 0 15px;
+    margin-left: auto;
+    color: white;
 }
 
-.message-block.quinary {
-    border-left-color: var(--quinary-agent);
-    background-color: rgba(var(--quinary-rgb), 0.1);
+.dialog-speaker {
+    font-weight: bold;
+    font-size: 0.8rem;
+    padding: 8px 12px 0;
+    opacity: 0.8;
 }
 
-.message-block.senary {
-    border-left-color: var(--senary-agent);
-    background-color: rgba(var(--senary-rgb), 0.1);
+.dialog-text {
+    padding: 5px 12px 8px;
+    line-height: 1.4;
 }
 
-/* Переключатель режима диалога */
-.dialog-mode-toggle {
+.dialog-history-entry {
+    margin-bottom: 20px;
+    border-top: 1px solid var(--border);
+    padding-top: 10px;
+}
+
+.dialog-timestamp {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    margin-bottom: 10px;
+    font-style: italic;
+}
+
+/* Dialog bubble triangles */
+.dialog-bubble-left::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: -8px;
+    width: 0;
+    height: 0;
+    border-bottom: 8px solid var(--background-lighter);
+    border-left: 8px solid transparent;
+}
+
+.dialog-bubble-right::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    right: -8px;
+    width: 0;
+    height: 0;
+    border-bottom: 8px solid var(--primary);
+    border-right: 8px solid transparent;
+}
+
+/* Add more spacing between dialog entries */
+.dialog-entry + .dialog-entry {
+    margin-top: 15px;
+}
+
+/* Tablets and smaller desktops */
+@media (max-width: 992px) {
+    .dialog-entry {
+        max-width: 85%;
+    }
+}
+
+/* Mobile devices */
+@media (max-width: 576px) {
+    .dialog-entry {
+        max-width: 90%;
+    }
+    
+    .dialog-text {
+        font-size: 0.9rem;
+    }
+}
+
+/* Dialog Controls */
+.dialog-controls {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 10;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.dialog-view-toggle {
+    display: flex;
+    background-color: var(--background-lighter);
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+}
+
+.dialog-view-btn {
+    padding: 6px 12px;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    font-size: 0.8rem;
     display: flex;
     align-items: center;
-    margin-top: 10px;
+    gap: 5px;
+    transition: all 0.2s ease;
 }
 
-.dialog-mode-toggle label {
-    margin-left: 10px;
-    font-size: 14px;
-    color: var(--text-secondary);
+.dialog-view-btn i {
+    font-size: 0.9rem;
 }
 
-/* Измененный макет для режима диалога */
-[data-dialog-mode="true"] .conversation-entry {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    grid-template-areas:
-        "timestamp timestamp"
-        "speaker text";
-    gap: 4px 10px;
-    border-left: 4px solid var(--primary);
-    padding-left: 12px;
+.dialog-view-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
 }
 
-[data-dialog-mode="true"] .conversation-entry .timestamp {
-    grid-area: timestamp;
+.dialog-view-btn.active {
+    background-color: var(--primary);
+    color: white;
 }
 
-[data-dialog-mode="true"] .conversation-entry .speaker-label {
-    grid-area: speaker;
+.copy-json-btn {
+    background-color: var(--background-lighter);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
 }
 
-[data-dialog-mode="true"] .conversation-entry .text {
-    grid-area: text;
+.copy-json-btn:hover {
+    background-color: var(--background-light);
+    border-color: var(--primary);
+}
+
+.copy-json-btn i {
+    font-size: 0.9rem;
+}
+
+/* JSON Preview styling */
+.json-preview {
+    background-color: var(--background-lighter);
+    border-radius: 5px;
+    padding: 15px;
+    margin: 10px 0;
+    font-family: monospace;
+    white-space: pre-wrap;
+    overflow-x: auto;
+    max-height: none;
+    overflow-y: auto;
+    border-left: 3px solid var(--primary);
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--text);
+}
+
+/* Для лучшей читаемости JSON на мобильных устройствах */
+@media (max-width: 576px) {
+    .json-preview {
+        font-size: 11px;
+        padding: 10px;
+    }
+    
+    .dialog-controls {
+        flex-direction: column;
+        align-items: flex-end;
+        top: 5px;
+        right: 5px;
+        gap: 5px;
+    }
+    
+    .dialog-view-btn {
+        padding: 5px 8px;
+        font-size: 0.75rem;
+    }
+    
+    .copy-json-btn {
+        padding: 5px 8px;
+        font-size: 0.75rem;
+    }
+}
+
+/* Position fix for dialog content parent */
+#dialog-tab {
+    position: relative;
 } 

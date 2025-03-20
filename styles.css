@@ -32,6 +32,13 @@
     --success: #4caf50;
     --warning: #ff9800;
     --info: #2196f3;
+
+    /* New colors for dialog mode */
+    --secondary-rgb: 3, 169, 244;   /* Light Blue */
+    --tertiary-rgb: 255, 152, 0;    /* Orange */
+    --quaternary-rgb: 233, 30, 99;  /* Pink */
+    --quinary-rgb: 255, 87, 34;     /* Deep Orange */
+    --senary-rgb: 76, 175, 80;      /* Green */
 }
 
 /* Light Theme Colors */
@@ -1303,4 +1310,86 @@ textarea.form-control {
         right: 20px;
         min-width: auto;
     }
+}
+
+/* Стили для режима диалога */
+[data-dialog-mode="true"] .timeline-container {
+    --dialog-spacing: 8px;
+}
+
+.speaker-name {
+    font-weight: 600;
+    font-size: 0.9em;
+    margin-bottom: 4px;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.speaker-label {
+    font-weight: 600;
+    color: var(--primary);
+    margin-bottom: 4px;
+    font-size: 0.95em;
+}
+
+/* Цвета для разных говорящих в диалоге */
+.message-block.secondary {
+    border-left-color: var(--secondary-agent);
+    background-color: rgba(var(--secondary-rgb), 0.1);
+}
+
+.message-block.tertiary {
+    border-left-color: var(--tertiary-agent);
+    background-color: rgba(var(--tertiary-rgb), 0.1);
+}
+
+.message-block.quaternary {
+    border-left-color: var(--quaternary-agent);
+    background-color: rgba(var(--quaternary-rgb), 0.1);
+}
+
+.message-block.quinary {
+    border-left-color: var(--quinary-agent);
+    background-color: rgba(var(--quinary-rgb), 0.1);
+}
+
+.message-block.senary {
+    border-left-color: var(--senary-agent);
+    background-color: rgba(var(--senary-rgb), 0.1);
+}
+
+/* Переключатель режима диалога */
+.dialog-mode-toggle {
+    display: flex;
+    align-items: center;
+    margin-top: 10px;
+}
+
+.dialog-mode-toggle label {
+    margin-left: 10px;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+/* Измененный макет для режима диалога */
+[data-dialog-mode="true"] .conversation-entry {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-areas:
+        "timestamp timestamp"
+        "speaker text";
+    gap: 4px 10px;
+    border-left: 4px solid var(--primary);
+    padding-left: 12px;
+}
+
+[data-dialog-mode="true"] .conversation-entry .timestamp {
+    grid-area: timestamp;
+}
+
+[data-dialog-mode="true"] .conversation-entry .speaker-label {
+    grid-area: speaker;
+}
+
+[data-dialog-mode="true"] .conversation-entry .text {
+    grid-area: text;
 } 

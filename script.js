@@ -8,6 +8,7 @@ const playButton = document.getElementById('playButton');
 const recognizeButton = document.getElementById('recognizeButton');
 const audioPlayer = document.getElementById('audioPlayer');
 const summaryText = document.getElementById('summary-text');
+const dialogModeToggle = document.getElementById('dialogModeToggle');
 
 // DOM Elements - Agent Panel
 const addAgentBtn = document.getElementById('add-agent-btn');
@@ -665,6 +666,21 @@ const AudioRecordingSystem = () => {
 
             // Theme toggle
             themeToggle.addEventListener('change', toggleTheme);
+
+            // Set up dialog mode toggle
+            if (dialogModeToggle) {
+                dialogModeToggle.addEventListener('change', () => {
+                    const isDialogMode = dialogModeToggle.checked;
+                    document.body.setAttribute('data-dialog-mode', isDialogMode ? 'true' : 'false');
+                    localStorage.setItem('dialogMode', isDialogMode ? 'true' : 'false');
+                    showNotification(isDialogMode ? 'Режим диалога включен' : 'Режим диалога выключен', 'info');
+                });
+                
+                // Initialize dialog mode from localStorage
+                const savedDialogMode = localStorage.getItem('dialogMode') === 'true';
+                dialogModeToggle.checked = savedDialogMode;
+                document.body.setAttribute('data-dialog-mode', savedDialogMode ? 'true' : 'false');
+            }
         },
         
         startRecording: async function() {
@@ -864,13 +880,20 @@ async function transcribeAudio(audioBlob) {
         // Convert audio blob to base64
         const audioBase64 = await blobToBase64(audioBlob);
         
-        // Prepare the request payload
+        // Determine if dialog mode is active
+        const isDialogMode = dialogModeToggle && dialogModeToggle.checked;
+        
+        // Prepare the request payload with appropriate prompt based on mode
+        const promptText = isDialogMode ? 
+            "Пожалуйста, расшифруй следующую аудиозапись на русском языке. Определи диалог и представь его в JSON формате. Каждое высказывание должно иметь поля 'speaker' (говорящий) и 'text' (текст). Пример: [{\"speaker\": \"Человек 1\", \"text\": \"Привет\"}, {\"speaker\": \"Человек 2\", \"text\": \"Здравствуйте\"}]. Если говорящий не меняется в последовательных высказываниях, все равно создай отдельные объекты для каждого высказывания." :
+            "Пожалуйста, расшифруй следующую аудиозапись на русском языке. Дай только текст без дополнительных комментариев.";
+        
         const payload = {
             contents: [
                 {
                     parts: [
                         {
-                            text: "Пожалуйста, расшифруй следующую аудиозапись на русском языке. Дай только текст без дополнительных комментариев."
+                            text: promptText
                         },
                         {
                             inline_data: {
@@ -912,10 +935,34 @@ async function transcribeAudio(audioBlob) {
         // Extract the transcribed text
         const transcribedText = data.candidates[0].content.parts[0].text;
         
-        // Update the conversation text
-        updateConversationText(transcribedText);
+        // Process differently based on mode
+        if (isDialogMode) {
+            try {
+                // Try to parse the JSON from the transcribed text
+                let dialogJson;
+                // Extract JSON from text (in case API returns additional text)
+                const jsonMatch = transcribedText.match(/\[\s*{.*}\s*\]/s);
+                
+                if (jsonMatch) {
+                    dialogJson = JSON.parse(jsonMatch[0]);
+                } else {
+                    // If no JSON pattern found, try parsing the whole text
+                    dialogJson = JSON.parse(transcribedText);
+                }
+                
+                // Update the conversation with dialog format
+                updateDialogView(dialogJson);
+            } catch (jsonError) {
+                console.error('Error parsing dialog JSON:', jsonError);
+                // Fallback to regular text view if parsing fails
+                updateConversationText(`Не удалось разобрать диалог. Исходный текст: ${transcribedText}`);
+            }
+        } else {
+            // Regular mode - just update the conversation text
+            updateConversationText(transcribedText);
+        }
         
-        // Process text with agents
+        // Process text with agents - send the plain text even in dialog mode
         await AgentManager.processWithAgents(transcribedText);
         
         // Update status
@@ -933,7 +980,7 @@ async function transcribeAudio(audioBlob) {
     }
 }
 
-// Update conversation text in timeline
+// Update conversation text in timeline (для стандартного режима)
 function updateConversationText(text) {
     if (!text.trim()) return; // Игнорировать пустой текст
     
@@ -981,6 +1028,79 @@ function updateConversationText(text) {
     
     // Scroll to newest message
     timelineItem.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    conversationText.scrollTop = conversationText.scrollHeight;
+}
+
+// Update conversation with dialog format
+function updateDialogView(dialogData) {
+    if (!dialogData || !Array.isArray(dialogData) || dialogData.length === 0) {
+        return;
+    }
+    
+    // Get current timestamp
+    const timestamp = new Date().toLocaleTimeString();
+    const shortTime = timestamp.replace(/:\d\d\s/, ' ');
+    
+    // Clear timeline before adding new dialog
+    conversationTimeline.innerHTML = '';
+    
+    // Create colors mapping for speakers to ensure consistent colors
+    const speakerColors = {};
+    const colorClasses = ['primary', 'secondary', 'tertiary', 'quaternary', 'quinary', 'senary'];
+    let colorIndex = 0;
+    
+    // Create timeline items for each dialog entry
+    dialogData.forEach(entry => {
+        // Assign color to speaker if not already assigned
+        if (!speakerColors[entry.speaker]) {
+            speakerColors[entry.speaker] = colorClasses[colorIndex % colorClasses.length];
+            colorIndex++;
+        }
+        
+        const timelineItem = document.createElement('div');
+        timelineItem.className = 'timeline-item';
+        
+        // Add entry with speaker and text
+        timelineItem.innerHTML = `
+            <div class="timestamp">${shortTime}</div>
+            <div class="message-block ${speakerColors[entry.speaker]}">
+                <div class="speaker-name">${entry.speaker}</div>
+                <p>${entry.text}</p>
+            </div>
+        `;
+        
+        // Add animation class
+        timelineItem.classList.add('message-fade-in');
+        
+        // Append to timeline
+        conversationTimeline.appendChild(timelineItem);
+    });
+    
+    // Add updating effect to timeline
+    conversationTimeline.classList.add('updating');
+    setTimeout(() => {
+        conversationTimeline.classList.remove('updating');
+    }, 1000);
+    
+    // Clear text view before adding new content
+    conversationText.innerHTML = '';
+    
+    // Create formatted text for the text view
+    const formattedText = dialogData.map(entry => `
+        <div class="conversation-entry message-fade-in">
+            <div class="timestamp">${timestamp}</div>
+            <div class="speaker-label">${entry.speaker}:</div>
+            <div class="text">${entry.text}</div>
+        </div>
+    `).join('');
+    
+    conversationText.insertAdjacentHTML('beforeend', formattedText);
+    
+    // Scroll to newest message
+    const lastTimelineItem = conversationTimeline.lastChild;
+    if (lastTimelineItem) {
+        lastTimelineItem.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
     conversationText.scrollTop = conversationText.scrollHeight;
 }
 

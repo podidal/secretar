@@ -242,7 +242,7 @@ body {
 .content {
     grid-area: content;
     display: grid;
-    grid-template-columns: 200px 1fr 300px;
+    grid-template-columns: 280px 1fr 300px;
     grid-template-areas: "viz conv agents";
     gap: 1px;
     background-color: var(--border);
@@ -257,17 +257,16 @@ body {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    width: 200px;
 }
 
 .panel-header {
-    padding: 0.6rem;
+    padding: 1rem;
     border-bottom: 1px solid var(--border);
     background-color: var(--background-light);
 }
 
 .panel-header h2 {
-    font-size: 0.9rem;
+    font-size: 1.1rem;
     font-weight: 500;
 }
 
@@ -276,39 +275,39 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0.5rem;
+    padding: 1rem;
     background-color: var(--background-light);
-    margin: 0.5rem;
+    margin: 1rem;
     border-radius: 8px;
     overflow: hidden;
-    height: 150px;
+    height: 200px;
 }
 
 .waveform-visualization {
     display: flex;
     align-items: center;
     justify-content: space-around;
-    height: 120px;
+    height: 150px;
     width: 100%;
-    gap: 1px;
+    gap: 2px;
 }
 
 .waveform-line {
-    width: 2px;
+    width: 3px;
     background-color: var(--primary);
-    border-radius: 1px;
+    border-radius: 2px;
     transition: height 0.1s ease;
 }
 
 #visualizer-container {
     width: 100%;
-    height: 150px;
+    height: 200px;
     position: relative;
     background-color: var(--background-light);
-    margin-bottom: 0.5rem;
+    margin-bottom: 1rem;
     overflow: hidden;
     border-radius: 8px;
-    margin: 0 0.5rem 0.5rem 0.5rem;
+    margin: 0 1rem 1rem 1rem;
 }
 
 #visualizer {
@@ -318,20 +317,14 @@ body {
 
 .record-button-container {
     display: flex;
-    align-items: center;
-    padding: 0.5rem;
-    gap: 0.5rem;
-}
-
-.record-info {
-    display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
+    padding-bottom: 1rem;
 }
 
 #recordButton {
-    width: 50px;
-    height: 50px;
+    width: 60px;
+    height: 60px;
     border-radius: 50%;
     background-color: var(--primary);
     color: white;
@@ -339,8 +332,8 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.2rem;
-    margin-bottom: 0.5rem;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
     cursor: pointer;
     transition: all 0.3s ease;
     box-shadow: 0 4px 6px var(--shadow);
@@ -374,10 +367,10 @@ body {
 }
 
 #recordingStatus {
-    font-size: 0.8rem;
+    font-size: 0.9rem;
     color: var(--text-secondary);
-    margin-bottom: 0.2rem;
-    min-height: 18px;
+    margin-bottom: 0.5rem;
+    min-height: 20px;
     opacity: 0;
     transition: opacity 0.3s ease;
 }
@@ -387,7 +380,7 @@ body {
 }
 
 #recordingTimer {
-    font-size: 0.9rem;
+    font-size: 1.1rem;
     font-weight: bold;
     color: var(--primary);
 }
@@ -799,13 +792,13 @@ select {
 /* Responsive Styles */
 @media (max-width: 1200px) {
     .content {
-        grid-template-columns: 180px 1fr 280px;
+        grid-template-columns: 250px 1fr 280px;
     }
 }
 
 @media (max-width: 992px) {
     .content {
-        grid-template-columns: 160px 1fr 250px;
+        grid-template-columns: 220px 1fr 250px;
     }
     
     .search-container {
@@ -817,7 +810,7 @@ select {
     }
     
     .waveform-container, #visualizer-container {
-        margin: 0.3rem;
+        margin: 0.5rem;
     }
 }
 
@@ -862,16 +855,6 @@ select {
     .playback-controls button {
         padding: 0.4rem 0.8rem;
         font-size: 0.9rem;
-    }
-    
-    .record-button-container {
-        flex-direction: column;
-        align-items: center;
-    }
-    
-    .record-info {
-        align-items: center;
-        margin-top: 0.3rem;
     }
 }
 

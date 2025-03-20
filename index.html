@@ -52,26 +52,33 @@
             <section class="conversation-panel">
                 <div class="panel-header">
                     <div class="tabs-container">
-                        <button class="tab active" data-tab="timeline">Таймлайн</button>
-                        <button class="tab" data-tab="text">Весь текст</button>
-                        <button class="tab" data-tab="dialog">Диалог</button>
-                        <button class="tab" data-tab="summary">Итоги</button>
+                        <div class="tab active" data-tab="conversation">Беседа</div>
+                        <div class="tab" data-tab="text">Весь текст</div>
+                        <div class="tab" data-tab="summary">Итоги</div>
                     </div>
                 </div>
                 
-                <!-- Timeline and conversation text containers -->
-                <div class="timeline-containers">
-                    <div id="timeline-tab" class="timeline-container">
-                        <div id="conversationTimeline" class="conversation-timeline"></div>
+                <!-- Conversation Timeline Tab -->
+                <div id="conversation-tab" class="timeline-container">
+                    <div id="conversationTimeline" class="conversation-timeline">
+                        <!-- Timeline items will be added here dynamically -->
                     </div>
-                    <div id="text-tab" class="timeline-container" style="display: none;">
-                        <div id="conversationText" class="conversation-text"></div>
+                </div>
+                
+                <!-- Full Text Tab -->
+                <div id="text-tab" class="timeline-container" style="display: none;">
+                    <div id="conversationText" class="conversation-full-text">
+                        <!-- Full text will be added here dynamically -->
                     </div>
-                    <div id="dialog-tab" class="timeline-container" style="display: none;">
-                        <div id="dialog-content" class="dialog-content"></div>
-                    </div>
-                    <div id="summary-tab" class="timeline-container" style="display: none;">
-                        <div id="summary-text" class="summary-text">Ожидание данных...</div>
+                </div>
+                
+                <!-- Summary Tab -->
+                <div id="summary-tab" class="timeline-container" style="display: none;">
+                    <div class="summary-container">
+                        <h3>Итоги разговора</h3>
+                        <div id="summary-text" class="summary-content">
+                            Здесь будет отображаться краткое резюме разговора после его завершения.
+                        </div>
                     </div>
                 </div>
             </section>

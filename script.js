@@ -23,8 +23,6 @@ const settingsPanel = document.getElementById('settings-panel');
 const sendFrequency = document.getElementById('sendFrequency');
 const frequencyValue = document.getElementById('frequencyValue');
 const autoSendToggle = document.getElementById('autoSendToggle');
-const visualizerMode = document.getElementById('visualizerMode');
-const effectMode = document.getElementById('effectMode');
 const visualizerToggle = document.getElementById('visualizerToggle');
 const themeToggle = document.getElementById('themeToggle');
 const themeLabel = document.getElementById('themeLabel');
@@ -265,24 +263,6 @@ let isRecording = false;
             // Set up audio player events
             audioPlayer.addEventListener('ended', () => {
                 playButton.innerHTML = '<i class="fas fa-play"></i> Прослушать';
-            });
-            
-            // Set up visualizer mode select
-            visualizerMode.addEventListener('change', () => {
-                try {
-                    visualizerInstance.setVisualMode(visualizerMode.value);
-                } catch (error) {
-                    console.error('Ошибка изменения режима визуализации:', error);
-                }
-            });
-            
-            // Set up effect mode select
-            effectMode.addEventListener('change', () => {
-                try {
-                    visualizerInstance.setMode(effectMode.value);
-                } catch (error) {
-                    console.error('Ошибка изменения эффекта:', error);
-                }
             });
             
             // Set up tabs

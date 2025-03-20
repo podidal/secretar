@@ -49,35 +49,35 @@ const AgentManager = (function() {
     
     // Agent types and their configurations
     const agentTypes = {
-        'аналитик': {
-            iconClass: 'fa-chart-line',
+        'скептик': {
+            iconClass: 'fa-question-circle',
             colorClass: 'secondary',
-            prompt: 'Ты агент "Аналитик". Твоя задача - выделить ключевые моменты из текста, помочь систематизировать информацию и выявить основные тенденции. Найди главные тезисы и опиши их взаимосвязь.'
+            prompt: 'Ты агент "Скептик". Твоя задача - критически оценить информацию в тексте, найти неточности или противоречия.'
         },
-        'эксперт': {
-            iconClass: 'fa-user-graduate',
+        'шутник': {
+            iconClass: 'fa-laugh',
             colorClass: 'primary',
-            prompt: 'Ты агент "Эксперт". Твоя задача - дать профессиональную оценку информации, определить достоверность фактов и качество аргументации. Укажи сильные и слабые стороны.'
+            prompt: 'Ты агент "Шутник". Твоя задача - найти в тексте что-то забавное и прокомментировать с юмором.'
         },
-        'исследователь': {
-            iconClass: 'fa-search',
+        'умник': {
+            iconClass: 'fa-brain',
             colorClass: 'tertiary',
-            prompt: 'Ты агент "Исследователь". Твоя задача - предложить дополнительные вопросы для углубленного изучения темы, выявить пробелы в информации и дать рекомендации для дальнейшего исследования.'
+            prompt: 'Ты агент "Умник". Твоя задача - дать интеллектуальный комментарий к тексту, расширить контекст, добавить полезную информацию.'
         },
-        'стратег': {
-            iconClass: 'fa-chess',
+        'эмоциональный': {
+            iconClass: 'fa-heart',
             colorClass: 'quaternary',
-            prompt: 'Ты агент "Стратег". Твоя задача - выявить возможные стратегические решения на основе полученной информации, оценить потенциальные риски и предложить оптимальный план действий.'
+            prompt: 'Ты агент "Эмоциональный". Твоя задача - выразить эмоциональную реакцию на текст, показать, как эта информация может влиять на эмоции людей.'
         },
-        'оппонент': {
-            iconClass: 'fa-balance-scale',
+        'критик': {
+            iconClass: 'fa-eye',
             colorClass: 'quinary',
-            prompt: 'Ты агент "Оппонент". Твоя задача - представить альтернативную точку зрения, найти контраргументы и сбалансировать обсуждение, указав на возможные упущения в рассуждениях.'
+            prompt: 'Ты агент "Критик". Твоя задача - сделать критический анализ информации, оценить ее достоверность, логичность и объективность.'
         },
-        'ассистент': {
-            iconClass: 'fa-magic',
+        'переводчик': {
+            iconClass: 'fa-language',
             colorClass: 'senary',
-            prompt: 'Ты агент "Ассистент". Твоя задача - резюмировать основные выводы, предложить конкретные шаги для применения полученной информации и предоставить практические рекомендации.'
+            prompt: 'Ты агент "Переводчик". Твоя задача - перевести текст на английский язык, сохраняя смысл и контекст.'
         },
         'кастомный': {
             iconClass: 'fa-star',
@@ -102,13 +102,13 @@ const AgentManager = (function() {
             // Отрисовываем сохраненных агентов
             renderAgents();
         } else {
-            // Инициализируем с одним агентом по умолчанию (аналитик)
+            // Инициализируем с одним агентом по умолчанию (скептик)
             agents = [{
                 id: 'agent-1',
-                type: 'аналитик',
-                icon: 'fa-chart-line',
+                type: 'скептик',
+                icon: 'fa-question-circle',
                 colorClass: 'secondary',
-                prompt: agentTypes['аналитик'].prompt
+                prompt: agentTypes['скептик'].prompt
             }];
             saveAgents();
         }
@@ -240,8 +240,8 @@ const AgentManager = (function() {
     function handleAddAgent() {
         // Reset modal
         modalTitle.textContent = 'Добавить агента';
-        agentTypeSelect.value = 'аналитик';
-        agentIconSelect.value = agentTypes['аналитик'].iconClass;
+        agentTypeSelect.value = 'скептик';
+        agentIconSelect.value = agentTypes['скептик'].iconClass;
         customPromptContainer.style.display = 'none';
         customPromptTextarea.value = '';
         
@@ -995,35 +995,13 @@ async function getAgentResponse(element, text, prompt) {
         element.innerHTML = 'Обработка...';
         element.classList.add('processing');
         
-        // Извлечь тип агента из карточки для настройки запроса
-        const agentCard = element.closest('.agent-card');
-        const agentType = agentCard ? agentCard.getAttribute('data-agent-type') : 'аналитик';
-        
-        // Обогащенный запрос с дополнительным контекстом
-        let enhancedPrompt = prompt;
-        
-        // Добавляем дополнительные инструкции в зависимости от типа агента
-        if (agentType === 'аналитик') {
-            enhancedPrompt += '\nВыдели 3-5 ключевых моментов, структурируй свой ответ, не упусти важные детали. Используй аналитический подход.';
-        } else if (agentType === 'эксперт') {
-            enhancedPrompt += '\nОцени информацию по шкале достоверности от 1 до 10. Укажи, какие факты требуют проверки.';
-        } else if (agentType === 'исследователь') {
-            enhancedPrompt += '\nСформулируй 2-3 конкретных вопроса для дальнейшего исследования. Укажи, каких данных не хватает.';
-        } else if (agentType === 'стратег') {
-            enhancedPrompt += '\nПредложи как минимум один стратегический план действий. Оцени риски и возможности.';
-        } else if (agentType === 'оппонент') {
-            enhancedPrompt += '\nНайди слабые места в рассуждениях и предложи альтернативную интерпретацию фактов.';
-        } else if (agentType === 'ассистент') {
-            enhancedPrompt += '\nСформулируй чёткие рекомендации в виде пунктов. Предложи следующие шаги.';
-        }
-        
         // Prepare the request payload
         const payload = {
             contents: [
                 {
                     parts: [
                         {
-                            text: `${enhancedPrompt} Текст: "${text}"`
+                            text: `${prompt} Текст: "${text}"`
                         }
                     ]
                 }
@@ -1032,7 +1010,7 @@ async function getAgentResponse(element, text, prompt) {
                 temperature: 0.7,
                 top_p: 0.9,
                 top_k: 40,
-                max_output_tokens: 300 // Увеличиваем длину ответа для более аналитических ответов
+                max_output_tokens: 200
             }
         };
         
@@ -1057,20 +1035,20 @@ async function getAgentResponse(element, text, prompt) {
         // Extract the agent's response
         const agentResponse = data.candidates[0].content.parts[0].text;
         
-        // Форматируем ответ для лучшего отображения
-        const formattedResponse = formatAgentResponse(agentResponse, agentType);
-        
         // Update the agent's response element with animation
         element.classList.remove('processing');
         element.classList.add('response-update');
-        element.innerHTML = formattedResponse;
+        element.innerHTML = agentResponse;
         
         // Expand the agent card to show response
-        const content = agentCard ? agentCard.querySelector('.agent-content') : null;
-        const expandButton = agentCard ? agentCard.querySelector('.expand-button i') : null;
-        if (content && expandButton) {
-            content.style.maxHeight = content.scrollHeight + "px";
-            expandButton.classList.replace('fa-chevron-down', 'fa-chevron-up');
+        const agentCard = element.closest('.agent-card');
+        if (agentCard) {
+            const content = agentCard.querySelector('.agent-content');
+            const expandButton = agentCard.querySelector('.expand-button i');
+            if (content && expandButton) {
+                content.style.maxHeight = content.scrollHeight + "px";
+                expandButton.classList.replace('fa-chevron-down', 'fa-chevron-up');
+            }
         }
         
         // Remove animation class after animation completes
@@ -1083,36 +1061,6 @@ async function getAgentResponse(element, text, prompt) {
         element.classList.remove('processing');
         element.innerHTML = `Ошибка обработки`;
     }
-}
-
-// Форматирование ответов агентов для лучшего отображения
-function formatAgentResponse(text, agentType) {
-    if (!text) return '';
-    
-    // Базовое форматирование: замена переносов строк на HTML-теги
-    let formatted = text.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>');
-    formatted = '<p>' + formatted + '</p>';
-    
-    // Выделение ключевых элементов в зависимости от типа агента
-    if (agentType === 'аналитик') {
-        // Выделить ключевые моменты и пронумерованные списки
-        formatted = formatted.replace(/(\d+\.\s.+?)(<br>|<\/p>)/g, '<strong>$1</strong>$2');
-        formatted = formatted.replace(/(Ключевые моменты|Основные тезисы|Выводы|Анализ):/g, '<strong>$1:</strong>');
-    } else if (agentType === 'эксперт') {
-        // Выделить оценки достоверности
-        formatted = formatted.replace(/(достоверность|оценка|рейтинг):\s*(\d+)\/10/gi, '<strong>$1: <span class="rating">$2/10</span></strong>');
-        formatted = formatted.replace(/(Сильные стороны|Слабые стороны|Факты требующие проверки|Оценка достоверности):/g, '<strong>$1:</strong>');
-    } else if (agentType === 'исследователь' || agentType === 'ассистент') {
-        // Выделить вопросы и рекомендации
-        formatted = formatted.replace(/(\?)/g, '$1</strong>');
-        formatted = formatted.replace(/(Вопросы для исследования|Рекомендации|Следующие шаги):/g, '<strong>$1:</strong>');
-        formatted = formatted.replace(/(\d+\.\s)/g, '<strong>$1');
-    } else if (agentType === 'стратег') {
-        // Выделить стратегические элементы
-        formatted = formatted.replace(/(Риски|Возможности|План действий|Стратегия):/g, '<strong>$1:</strong>');
-    }
-    
-    return formatted;
 }
 
 // Theme handling

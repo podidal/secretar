@@ -34,27 +34,19 @@
         <!-- Main Content Area -->
         <main class="content">
             <!-- Left Panel - Visualization -->
-            <section class="visualization-panel">
+            <div class="visualization-panel">
                 <div class="panel-header">
                     <h2>Визуализация</h2>
                 </div>
-                
                 <div class="waveform-container">
                     <div class="waveform-visualization"></div>
                 </div>
-                
-                <div id="visualizer-container">
-                    <canvas id="visualizer"></canvas>
-                </div>
-                
                 <div class="record-button-container">
-                    <button id="recordButton">
-                        <i class="fas fa-microphone"></i>
-                    </button>
+                    <button id="recordButton"><i class="fas fa-microphone"></i></button>
                     <div id="recordingStatus"></div>
                     <div id="recordingTimer">00:00</div>
                 </div>
-            </section>
+            </div>
             
             <!-- Center Panel - Conversation Timeline -->
             <section class="conversation-panel">
@@ -199,13 +191,6 @@
                         <input type="checkbox" id="themeToggle">
                         <span class="slider round"></span>
                         <span class="switch-label" id="themeLabel">Тёмная</span>
-                    </label>
-                </div>
-                <div class="setting-item">
-                    <label>Показывать визуализацию</label>
-                    <label class="switch">
-                        <input type="checkbox" id="visualizerToggle" checked>
-                        <span class="slider round"></span>
                     </label>
                 </div>
             </div>

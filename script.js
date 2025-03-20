@@ -2,8 +2,6 @@
 const recordButton = document.getElementById('recordButton');
 const recordingStatus = document.getElementById('recordingStatus');
 const recordingTimer = document.getElementById('recordingTimer');
-const visualizer = document.getElementById('visualizer');
-const visualizerContainer = document.getElementById('visualizer-container');
 const conversationText = document.getElementById('conversationText');
 const conversationTimeline = document.getElementById('conversationTimeline');
 const playButton = document.getElementById('playButton');
@@ -23,7 +21,6 @@ const settingsPanel = document.getElementById('settings-panel');
 const sendFrequency = document.getElementById('sendFrequency');
 const frequencyValue = document.getElementById('frequencyValue');
 const autoSendToggle = document.getElementById('autoSendToggle');
-const visualizerToggle = document.getElementById('visualizerToggle');
 const themeToggle = document.getElementById('themeToggle');
 const themeLabel = document.getElementById('themeLabel');
 
@@ -34,20 +31,17 @@ const timelineContainers = document.querySelectorAll('.timeline-container');
 // DOM Elements - Waveform Visualization
 const waveformVisualization = document.querySelector('.waveform-visualization');
 
-// Объявление глобальной переменной визуализатора
-let visualizerInstance;
-
 // Audio Recording System (Composition pattern)
 const AudioRecordingSystem = () => {
     // Private members
-let mediaRecorder;
-let audioChunks = [];
-let recordingStartTime;
-let recordingTimerInterval;
-let audioContext;
-let analyser;
+    let mediaRecorder;
+    let audioChunks = [];
+    let recordingStartTime;
+    let recordingTimerInterval;
+    let audioContext;
+    let analyser;
     let stream;
-let isRecording = false;
+    let isRecording = false;
     let autoSendInterval;
     let sendIntervalMs = 10000; // Default 10 seconds
     let isAutoSendEnabled = true;
@@ -240,11 +234,6 @@ let isRecording = false;
                 autoSendComponent.setEnabled(autoSendToggle.checked);
             });
             
-            // Set up visualizer toggle
-            visualizerToggle.addEventListener('change', () => {
-                visualizerContainer.style.display = visualizerToggle.checked ? 'block' : 'none';
-            });
-            
             // Set up recognize button
             recognizeButton.addEventListener('click', async () => {
                 if (audioChunks.length > 0) {
@@ -380,13 +369,6 @@ let isRecording = false;
                 // Start waveform animation
                 waveformComponent.animateWaveform();
                 
-                // Setup visualizer
-                try {
-                    visualizerInstance.setupAudioAnalyser(stream);
-                } catch (vizError) {
-                    console.error('Ошибка настройки визуализатора:', vizError);
-                }
-                
                 mediaRecorder.ondataavailable = (event) => {
                     if (event.data.size > 0) {
                         audioChunks.push(event.data);
@@ -425,9 +407,6 @@ let isRecording = false;
                 if (audioContext) {
                     audioContext.close().catch(e => console.error('Error closing audio context:', e));
                 }
-                
-                // Stop visualizer
-                visualizerInstance.stop();
                 
                 // Stop timer
                 timerComponent.stop();
@@ -767,9 +746,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Инициализация системы записи
     const recordingSystem = AudioRecordingSystem();
     recordingSystem.init();
-    
-    // Загрузка визуализатора
-    loadVisualizer();
 });
 
 // Проверка DOM-элементов перед использованием
@@ -777,8 +753,7 @@ function checkDOMElements() {
     const requiredElements = [
         { id: 'themeToggle', name: 'Theme Toggle' },
         { id: 'themeLabel', name: 'Theme Label' },
-        { id: 'visualizer', name: 'Visualizer Canvas' },
-        { id: 'visualizerToggle', name: 'Visualizer Toggle' }
+        { id: 'recordButton', name: 'Record Button' }
     ];
     
     requiredElements.forEach(el => {
@@ -786,67 +761,4 @@ function checkDOMElements() {
             console.warn(`Element ${el.name} (${el.id}) not found in DOM.`);
         }
     });
-}
-
-// Загрузка визуализатора
-function loadVisualizer() {
-    try {
-        // Импорт модуля через динамический импорт
-        import('./tentacles-visualizer.js')
-            .then(module => {
-                const { TentaclesVisualizer } = module;
-                const visualizerCanvas = document.getElementById('visualizer');
-                
-                if (!visualizerCanvas) {
-                    throw new Error('Visualizer canvas element not found');
-                }
-                
-                // Создаем визуализатор щупалец
-                visualizerInstance = new TentaclesVisualizer(visualizerCanvas, {
-                    numTentacles: 8,
-                    baseColor: [220, 53, 69], // Match the red theme
-                    tentacleWidth: 6,
-                    segments: 20,
-                    cohesionStrength: 0.01,
-                    centerAttraction: 0.0005,
-                    noiseSpeed: 0.01,
-                    volumeSmoothing: 0.1
-                });
-                
-                console.log('Tentacles visualizer initialized successfully');
-            })
-            .catch(error => {
-                console.error('Error importing TentaclesVisualizer:', error);
-                createFallbackVisualizer();
-            });
-    } catch (error) {
-        console.error('Error initializing visualizer:', error);
-        createFallbackVisualizer();
-    }
-}
-
-// Create fallback visualizer
-function createFallbackVisualizer() {
-    visualizerInstance = {
-        setupAudioAnalyser: function() {},
-        stop: function() {},
-        setVisualMode: function() {},
-        setMode: function() {}
-    };
-}
-
-// Create and initialize the waveform visualization
-function createWaveformVisualization() {
-    const container = document.querySelector('.waveform-visualization');
-    if (!container) return;
-    
-    container.innerHTML = '';
-    
-    // Create animation lines
-    for (let i = 0; i < 60; i++) {
-        const line = document.createElement('div');
-        line.className = 'waveform-line';
-        line.style.height = `${Math.random() * 50 + 5}px`;
-        container.appendChild(line);
-    }
 } 

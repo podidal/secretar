@@ -174,55 +174,38 @@
         </div>
         
         <div class="settings-content">
-            <!-- Recording Settings -->
             <div class="settings-section">
-                <h3>Запись и распознавание</h3>
-                
+                <h3>Запись</h3>
                 <div class="setting-item">
-                    <label for="sendFrequency">Частота отправки (сек):</label>
+                    <label>Частота отправки (секунды)</label>
                     <div class="slider-container">
-                        <input type="range" id="sendFrequency" min="5" max="60" value="10" class="slider">
+                        <input type="range" id="sendFrequency" class="slider" min="5" max="60" value="10">
                         <span id="frequencyValue">10</span>
                     </div>
                 </div>
-                
                 <div class="setting-item">
-                    <label for="autoSendToggle">Автоматическая отправка:</label>
+                    <label>Автоматическая отправка</label>
                     <label class="switch">
                         <input type="checkbox" id="autoSendToggle" checked>
-                        <span class="slider round"></span>
+                        <span class="slider"></span>
                     </label>
                 </div>
             </div>
-            
-            <!-- Visualization Settings -->
             <div class="settings-section">
-                <h3>Визуализация</h3>
-                
+                <h3>Внешний вид</h3>
                 <div class="setting-item">
-                    <label for="visualizerMode">Режим визуализации:</label>
-                    <select id="visualizerMode">
-                        <option value="spectrum">Спектр</option>
-                        <option value="waveform">Волновая форма</option>
-                        <option value="circular">Круговой</option>
-                        <option value="tentacles">Щупальца</option>
-                    </select>
+                    <label>Тема</label>
+                    <label class="switch">
+                        <input type="checkbox" id="themeToggle">
+                        <span class="slider"></span>
+                        <span class="switch-label" id="themeLabel">Тёмная</span>
+                    </label>
                 </div>
-                
                 <div class="setting-item">
-                    <label for="effectMode">Эффект:</label>
-                    <select id="effectMode">
-                        <option value="waves+particles">Волны + Частицы</option>
-                        <option value="waves">Только волны</option>
-                        <option value="particles">Только частицы</option>
-                    </select>
-                </div>
-                
-                <div class="setting-item">
-                    <label for="visualizerToggle">Показывать визуализатор:</label>
+                    <label>Показывать визуализацию</label>
                     <label class="switch">
                         <input type="checkbox" id="visualizerToggle" checked>
-                        <span class="slider round"></span>
+                        <span class="slider"></span>
                     </label>
                 </div>
             </div>

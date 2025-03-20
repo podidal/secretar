@@ -311,6 +311,63 @@ let isRecording = false;
                     settingsPanel.classList.remove('active');
                 }
             });
+
+            // Set up agent card expansion buttons
+            document.querySelectorAll('.expand-button').forEach(button => {
+                button.addEventListener('click', () => {
+                    const card = button.closest('.agent-card');
+                    const content = card.querySelector('.agent-content');
+                    const icon = button.querySelector('i');
+                    
+                    if (content.style.maxHeight) {
+                        content.style.maxHeight = null;
+                        icon.classList.replace('fa-chevron-up', 'fa-chevron-down');
+                    } else {
+                        content.style.maxHeight = content.scrollHeight + "px";
+                        icon.classList.replace('fa-chevron-down', 'fa-chevron-up');
+                    }
+                });
+            });
+
+            // Set up search functionality
+            const searchInput = document.querySelector('.search-input');
+            searchInput.addEventListener('input', (e) => {
+                const searchTerm = e.target.value.toLowerCase();
+                
+                // Search in conversation timeline
+                const timelineItems = document.querySelectorAll('.timeline-item .message-block');
+                timelineItems.forEach(item => {
+                    const text = item.textContent.toLowerCase();
+                    const messageBlock = item.closest('.timeline-item');
+                    if (text.includes(searchTerm)) {
+                        messageBlock.style.display = 'flex';
+                        // Highlight matching text
+                        if (searchTerm) {
+                            const regex = new RegExp(`(${searchTerm})`, 'gi');
+                            item.innerHTML = item.textContent.replace(regex, '<mark>$1</mark>');
+                        }
+                    } else {
+                        messageBlock.style.display = 'none';
+                    }
+                });
+                
+                // Search in full text view
+                const textEntries = document.querySelectorAll('.conversation-entry');
+                textEntries.forEach(entry => {
+                    const text = entry.querySelector('.text').textContent.toLowerCase();
+                    if (text.includes(searchTerm)) {
+                        entry.style.display = 'block';
+                        // Highlight matching text
+                        if (searchTerm) {
+                            const textElement = entry.querySelector('.text');
+                            const regex = new RegExp(`(${searchTerm})`, 'gi');
+                            textElement.innerHTML = textElement.textContent.replace(regex, '<mark>$1</mark>');
+                        }
+                    } else {
+                        entry.style.display = 'none';
+                    }
+                });
+            });
         },
         
         startRecording: async function() {

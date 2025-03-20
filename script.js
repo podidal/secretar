@@ -9,10 +9,19 @@ const recognizeButton = document.getElementById('recognizeButton');
 const audioPlayer = document.getElementById('audioPlayer');
 const summaryText = document.getElementById('summary-text');
 
-// DOM Elements - Agent Responses
-const agentJoker = document.getElementById('agent-joker');
-const agentSkeptic = document.getElementById('agent-skeptic');
-const agentSmart = document.getElementById('agent-smart');
+// DOM Elements - Agent Panel
+const addAgentBtn = document.getElementById('add-agent-btn');
+const agentCards = document.getElementById('agent-cards');
+
+// DOM Elements - Agent Modal
+const agentModal = document.getElementById('agent-modal');
+const closeModalBtn = document.getElementById('close-modal');
+const saveAgentBtn = document.getElementById('save-agent');
+const modalTitle = document.getElementById('modal-title');
+const agentTypeSelect = document.getElementById('agent-type');
+const agentIconSelect = document.getElementById('agent-icon');
+const customPromptContainer = document.getElementById('custom-prompt-container');
+const customPromptTextarea = document.getElementById('custom-prompt');
 
 // DOM Elements - Settings Panel
 const settingsToggle = document.getElementById('settings-toggle');
@@ -30,6 +39,345 @@ const timelineContainers = document.querySelectorAll('.timeline-container');
 
 // DOM Elements - Waveform Visualization
 const waveformVisualization = document.querySelector('.waveform-visualization');
+
+// Agent Management System
+const AgentManager = (function() {
+    // Private variables
+    let agents = [];
+    let nextAgentId = 2; // Start from 2 since we have one default agent
+    let editingAgentId = null;
+    
+    // Agent types and their configurations
+    const agentTypes = {
+        'скептик': {
+            iconClass: 'fa-question-circle',
+            colorClass: 'secondary',
+            prompt: 'Ты агент "Скептик". Твоя задача - критически оценить информацию в тексте, найти неточности или противоречия.'
+        },
+        'шутник': {
+            iconClass: 'fa-laugh',
+            colorClass: 'primary',
+            prompt: 'Ты агент "Шутник". Твоя задача - найти в тексте что-то забавное и прокомментировать с юмором.'
+        },
+        'умник': {
+            iconClass: 'fa-brain',
+            colorClass: 'tertiary',
+            prompt: 'Ты агент "Умник". Твоя задача - дать интеллектуальный комментарий к тексту, расширить контекст, добавить полезную информацию.'
+        },
+        'эмоциональный': {
+            iconClass: 'fa-heart',
+            colorClass: 'quaternary',
+            prompt: 'Ты агент "Эмоциональный". Твоя задача - выразить эмоциональную реакцию на текст, показать, как эта информация может влиять на эмоции людей.'
+        },
+        'критик': {
+            iconClass: 'fa-eye',
+            colorClass: 'quinary',
+            prompt: 'Ты агент "Критик". Твоя задача - сделать критический анализ информации, оценить ее достоверность, логичность и объективность.'
+        },
+        'переводчик': {
+            iconClass: 'fa-language',
+            colorClass: 'senary',
+            prompt: 'Ты агент "Переводчик". Твоя задача - перевести текст на английский язык, сохраняя смысл и контекст.'
+        },
+        'кастомный': {
+            iconClass: 'fa-star',
+            colorClass: 'custom',
+            prompt: '' // Будет задан пользователем
+        }
+    };
+    
+    // Initialize agents from localStorage or default
+    function initAgents() {
+        const savedAgents = localStorage.getItem('agents');
+        
+        if (savedAgents) {
+            agents = JSON.parse(savedAgents);
+            // Обновляем nextAgentId
+            const maxId = agents.reduce((max, agent) => {
+                const idNum = parseInt(agent.id.split('-')[1]);
+                return idNum > max ? idNum : max;
+            }, 0);
+            nextAgentId = maxId + 1;
+            
+            // Отрисовываем сохраненных агентов
+            renderAgents();
+        } else {
+            // Инициализируем с одним агентом по умолчанию (скептик)
+            agents = [{
+                id: 'agent-1',
+                type: 'скептик',
+                icon: 'fa-question-circle',
+                colorClass: 'secondary',
+                prompt: agentTypes['скептик'].prompt
+            }];
+            saveAgents();
+        }
+    }
+    
+    // Save agents to localStorage
+    function saveAgents() {
+        localStorage.setItem('agents', JSON.stringify(agents));
+    }
+    
+    // Render all agents from the agents array
+    function renderAgents() {
+        // Clear existing agents
+        agentCards.innerHTML = '';
+        
+        // Render each agent
+        agents.forEach(agent => {
+            const agentElement = createAgentElement(agent);
+            agentCards.appendChild(agentElement);
+        });
+        
+        // Set up event handlers
+        setupAgentEventHandlers();
+    }
+    
+    // Create HTML element for an agent
+    function createAgentElement(agent) {
+        const div = document.createElement('div');
+        div.className = `agent-card ${agent.colorClass}`;
+        div.setAttribute('data-agent-id', agent.id);
+        div.setAttribute('data-agent-type', agent.type);
+        
+        div.innerHTML = `
+            <div class="agent-header">
+                <div class="agent-icon">
+                    <i class="fas ${agent.icon}"></i>
+                </div>
+                <h3>${capitalizeFirstLetter(agent.type)}</h3>
+                <div class="agent-actions">
+                    <button class="agent-edit-btn icon-button" title="Изменить агента">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="agent-delete-btn icon-button" title="Удалить агента">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                    <button class="expand-button" title="Развернуть">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="agent-content">
+                Ждем вашего сообщения...
+            </div>
+        `;
+        
+        return div;
+    }
+    
+    // Set up event handlers for agent cards
+    function setupAgentEventHandlers() {
+        // Edit buttons
+        document.querySelectorAll('.agent-edit-btn').forEach(button => {
+            button.addEventListener('click', handleEditAgent);
+        });
+        
+        // Delete buttons
+        document.querySelectorAll('.agent-delete-btn').forEach(button => {
+            button.addEventListener('click', handleDeleteAgent);
+        });
+        
+        // Expand buttons
+        document.querySelectorAll('.expand-button').forEach(button => {
+            button.addEventListener('click', () => {
+                const card = button.closest('.agent-card');
+                const content = card.querySelector('.agent-content');
+                const icon = button.querySelector('i');
+                
+                if (content.style.maxHeight) {
+                    content.style.maxHeight = null;
+                    icon.classList.replace('fa-chevron-up', 'fa-chevron-down');
+                } else {
+                    content.style.maxHeight = content.scrollHeight + "px";
+                    icon.classList.replace('fa-chevron-down', 'fa-chevron-up');
+                }
+            });
+        });
+    }
+    
+    // Handle click on edit agent button
+    function handleEditAgent(event) {
+        const agentCard = event.currentTarget.closest('.agent-card');
+        const agentId = agentCard.getAttribute('data-agent-id');
+        const agentType = agentCard.getAttribute('data-agent-type');
+        
+        // Find agent in our array
+        const agent = agents.find(a => a.id === agentId);
+        if (!agent) return;
+        
+        // Set modal for editing
+        modalTitle.textContent = 'Изменить агента';
+        agentTypeSelect.value = agent.type;
+        agentIconSelect.value = agent.icon;
+        
+        // Show custom prompt if it's a custom agent
+        if (agent.type === 'кастомный') {
+            customPromptContainer.style.display = 'block';
+            customPromptTextarea.value = agent.prompt;
+        } else {
+            customPromptContainer.style.display = 'none';
+        }
+        
+        // Save agent ID being edited
+        editingAgentId = agentId;
+        
+        // Show modal
+        agentModal.classList.add('active');
+    }
+    
+    // Handle click on delete agent button
+    function handleDeleteAgent(event) {
+        if (agents.length <= 1) {
+            alert('Необходим минимум один агент');
+            return;
+        }
+        
+        const agentCard = event.currentTarget.closest('.agent-card');
+        const agentId = agentCard.getAttribute('data-agent-id');
+        
+        // Confirm deletion
+        if (confirm('Вы уверены, что хотите удалить этого агента?')) {
+            // Remove agent from array
+            agents = agents.filter(agent => agent.id !== agentId);
+            
+            // Save to localStorage
+            saveAgents();
+            
+            // Remove from DOM
+            agentCard.remove();
+        }
+    }
+    
+    // Handle adding new agent
+    function handleAddAgent() {
+        // Reset modal
+        modalTitle.textContent = 'Добавить агента';
+        agentTypeSelect.value = 'скептик';
+        agentIconSelect.value = agentTypes['скептик'].iconClass;
+        customPromptContainer.style.display = 'none';
+        customPromptTextarea.value = '';
+        
+        // Clear editing agent ID
+        editingAgentId = null;
+        
+        // Show modal
+        agentModal.classList.add('active');
+    }
+    
+    // Handle saving agent (add new or update existing)
+    function handleSaveAgent() {
+        const type = agentTypeSelect.value;
+        const icon = agentIconSelect.value;
+        
+        // Get color class and prompt based on type
+        const colorClass = agentTypes[type].colorClass;
+        let prompt = agentTypes[type].prompt;
+        
+        // For custom agents, use the custom prompt
+        if (type === 'кастомный') {
+            prompt = customPromptTextarea.value.trim();
+            if (!prompt) {
+                alert('Пожалуйста, введите промпт для кастомного агента');
+                return;
+            }
+        }
+        
+        if (editingAgentId) {
+            // Update existing agent
+            const index = agents.findIndex(agent => agent.id === editingAgentId);
+            if (index !== -1) {
+                agents[index] = {
+                    ...agents[index],
+                    type,
+                    icon,
+                    colorClass,
+                    prompt
+                };
+            }
+        } else {
+            // Add new agent
+            const newAgent = {
+                id: `agent-${nextAgentId++}`,
+                type,
+                icon,
+                colorClass,
+                prompt
+            };
+            agents.push(newAgent);
+        }
+        
+        // Save to localStorage
+        saveAgents();
+        
+        // Re-render agents
+        renderAgents();
+        
+        // Close modal
+        agentModal.classList.remove('active');
+    }
+    
+    // Handle agent type change in modal
+    function handleAgentTypeChange() {
+        const selectedType = agentTypeSelect.value;
+        
+        // Show/hide custom prompt field
+        if (selectedType === 'кастомный') {
+            customPromptContainer.style.display = 'block';
+        } else {
+            customPromptContainer.style.display = 'none';
+        }
+        
+        // Update icon
+        agentIconSelect.value = agentTypes[selectedType].iconClass;
+    }
+    
+    // Helper function to capitalize first letter
+    function capitalizeFirstLetter(string) {
+        return string.charAt(0).toUpperCase() + string.slice(1);
+    }
+    
+    // Process all agents with the given text
+    async function processWithAgents(text) {
+        try {
+            // Array of promises for processing each agent
+            const promises = agents.map(agent => {
+                const agentElement = document.querySelector(`[data-agent-id="${agent.id}"] .agent-content`);
+                return getAgentResponse(agentElement, text, agent.prompt);
+            });
+            
+            // Process all agents in parallel
+            await Promise.all(promises);
+        } catch (error) {
+            console.error('Error processing with agents:', error);
+        }
+    }
+    
+    // Public methods
+    return {
+        init: function() {
+            initAgents();
+            
+            // Event listeners for modal
+            addAgentBtn.addEventListener('click', handleAddAgent);
+            closeModalBtn.addEventListener('click', () => agentModal.classList.remove('active'));
+            saveAgentBtn.addEventListener('click', handleSaveAgent);
+            agentTypeSelect.addEventListener('change', handleAgentTypeChange);
+            
+            // Close modal when clicking outside
+            agentModal.addEventListener('click', (e) => {
+                if (e.target === agentModal) {
+                    agentModal.classList.remove('active');
+                }
+            });
+        },
+        processWithAgents: processWithAgents,
+        getAgents: function() {
+            return [...agents]; // Return a copy
+        }
+    };
+})();
 
 // Audio Recording System (Composition pattern)
 const AudioRecordingSystem = () => {
@@ -620,40 +968,15 @@ function updateConversationText(text) {
     conversationText.scrollTop = conversationText.scrollHeight;
 }
 
-// Process text with AI agents
+// Process text with AI agents (replace the old function)
 async function processWithAgents(text) {
-    try {
-        // Process with all agents in parallel
-        await Promise.all([
-            getAgentResponse(agentJoker, text, 'шутник'),
-            getAgentResponse(agentSkeptic, text, 'скептик'),
-            getAgentResponse(agentSmart, text, 'умник')
-        ]);
-    } catch (error) {
-        console.error('Error processing with agents:', error);
-    }
+    await AgentManager.processWithAgents(text);
 }
 
 // Get response from an AI agent
-async function getAgentResponse(element, text, agentType) {
+async function getAgentResponse(element, text, prompt) {
     try {
         element.innerHTML = 'Обработка...';
-        
-        // Prepare prompt based on agent type
-        let prompt;
-        switch (agentType) {
-            case 'шутник':
-                prompt = `Ты агент "Шутник". Твоя задача - найти в тексте что-то забавное и прокомментировать с юмором. Текст: "${text}"`;
-                break;
-            case 'скептик':
-                prompt = `Ты агент "Скептик". Твоя задача - критически оценить информацию в тексте, найти неточности или противоречия. Текст: "${text}"`;
-                break;
-            case 'умник':
-                prompt = `Ты агент "Умник". Твоя задача - дать интеллектуальный комментарий к тексту, расширить контекст, добавить полезную информацию. Текст: "${text}"`;
-                break;
-            default:
-                prompt = `Прокомментируй текст: "${text}"`;
-        }
         
         // Prepare the request payload
         const payload = {
@@ -661,7 +984,7 @@ async function getAgentResponse(element, text, agentType) {
                 {
                     parts: [
                         {
-                            text: prompt
+                            text: `${prompt} Текст: "${text}"`
                         }
                     ]
                 }
@@ -699,7 +1022,7 @@ async function getAgentResponse(element, text, agentType) {
         element.innerHTML = agentResponse;
         
     } catch (error) {
-        console.error(`Error getting ${agentType} response:`, error);
+        console.error(`Error getting agent response:`, error);
         element.innerHTML = `Error processing`;
     }
 }
@@ -742,6 +1065,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Проверка ошибок при инициализации DOM элементов
     checkDOMElements();
+    
+    // Инициализация системы агентов
+    AgentManager.init();
     
     // Инициализация системы записи
     const recordingSystem = AudioRecordingSystem();

@@ -87,53 +87,32 @@
             <section class="agents-panel">
                 <div class="panel-header">
                     <h2>Агенты</h2>
+                    <button id="add-agent-btn" class="icon-button">
+                        <i class="fas fa-plus"></i>
+                    </button>
                 </div>
                 
-                <div class="agent-cards">
-                    <!-- Agent Card - Joker -->
-                    <div class="agent-card primary">
-                        <div class="agent-header">
-                            <div class="agent-icon">
-                                <i class="fas fa-laugh"></i>
-                            </div>
-                            <h3>Шутник</h3>
-                            <button class="expand-button">
-                                <i class="fas fa-chevron-down"></i>
-                            </button>
-                        </div>
-                        <div class="agent-content" id="agent-joker">
-                            Ждем вашего сообщения...
-                        </div>
-                    </div>
-                    
-                    <!-- Agent Card - Skeptic -->
-                    <div class="agent-card secondary">
+                <div id="agent-cards" class="agent-cards">
+                    <!-- Скептик будет единственным агентом по умолчанию -->
+                    <div class="agent-card secondary" data-agent-id="agent-1" data-agent-type="скептик">
                         <div class="agent-header">
                             <div class="agent-icon">
                                 <i class="fas fa-question-circle"></i>
                             </div>
                             <h3>Скептик</h3>
-                            <button class="expand-button">
-                                <i class="fas fa-chevron-down"></i>
-                            </button>
-                        </div>
-                        <div class="agent-content" id="agent-skeptic">
-                            Ждем вашего сообщения...
-                        </div>
-                    </div>
-                    
-                    <!-- Agent Card - Smart -->
-                    <div class="agent-card tertiary">
-                        <div class="agent-header">
-                            <div class="agent-icon">
-                                <i class="fas fa-brain"></i>
+                            <div class="agent-actions">
+                                <button class="agent-edit-btn icon-button" title="Изменить агента">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="agent-delete-btn icon-button" title="Удалить агента">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                <button class="expand-button" title="Развернуть">
+                                    <i class="fas fa-chevron-down"></i>
+                                </button>
                             </div>
-                            <h3>Умник</h3>
-                            <button class="expand-button">
-                                <i class="fas fa-chevron-down"></i>
-                            </button>
                         </div>
-                        <div class="agent-content" id="agent-smart">
+                        <div class="agent-content">
                             Ждем вашего сообщения...
                         </div>
                     </div>
@@ -193,6 +172,53 @@
                         <span class="switch-label" id="themeLabel">Тёмная</span>
                     </label>
                 </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Agent Modal for Adding/Editing -->
+    <div id="agent-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Добавить агента</h3>
+                <button id="close-modal" class="icon-button">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="agent-type">Тип агента</label>
+                    <select id="agent-type" class="form-control">
+                        <option value="скептик">Скептик</option>
+                        <option value="шутник">Шутник</option>
+                        <option value="умник">Умник</option>
+                        <option value="эмоциональный">Эмоциональный</option>
+                        <option value="критик">Критик</option>
+                        <option value="переводчик">Переводчик</option>
+                        <option value="кастомный">Кастомный</option>
+                    </select>
+                </div>
+                <div id="custom-prompt-container" class="form-group" style="display: none;">
+                    <label for="custom-prompt">Кастомный промпт</label>
+                    <textarea id="custom-prompt" class="form-control" rows="4" placeholder="Введите инструкции для агента..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="agent-icon">Иконка</label>
+                    <select id="agent-icon" class="form-control">
+                        <option value="fa-question-circle">Вопрос</option>
+                        <option value="fa-laugh">Смех</option>
+                        <option value="fa-brain">Мозг</option>
+                        <option value="fa-heart">Сердце</option>
+                        <option value="fa-bolt">Молния</option>
+                        <option value="fa-comment">Комментарий</option>
+                        <option value="fa-language">Язык</option>
+                        <option value="fa-eye">Глаз</option>
+                        <option value="fa-star">Звезда</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="save-agent" class="btn btn-primary">Сохранить</button>
             </div>
         </div>
     </div>

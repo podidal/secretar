@@ -941,6 +941,9 @@ function updateConversationText(text) {
     const timestamp = new Date().toLocaleTimeString();
     const shortTime = timestamp.replace(/:\d\d\s/, ' ');
     
+    // Очистить timeline перед добавлением нового сообщения
+    conversationTimeline.innerHTML = '';
+    
     // Create timeline item
     const timelineItem = document.createElement('div');
     timelineItem.className = 'timeline-item';
@@ -965,7 +968,10 @@ function updateConversationText(text) {
     // Append to timeline
     conversationTimeline.appendChild(timelineItem);
     
-    // For conversation text view, check if we already have an entry for this timestamp
+    // Очистить текст перед добавлением новой записи
+    conversationText.innerHTML = '';
+    
+    // Добавить только последнюю запись в текстовое представление
     const formattedText = `<div class="conversation-entry message-fade-in">
         <div class="timestamp">${timestamp}</div>
         <div class="text">${text}</div>

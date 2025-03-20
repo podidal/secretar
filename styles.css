@@ -4,6 +4,7 @@
     --primary: #dc3545;
     --primary-dark: #c82333;
     --primary-light: #ff6b81;
+    --primary-rgb: 220, 53, 69; /* RGB value for primary color */
     --background: #121212;
     --background-light: #1e1e1e;
     --background-lighter: #2a2a2a;
@@ -343,21 +344,26 @@ body {
     transform: scale(1.05);
 }
 
-#recordButton.recording {
-    animation: pulse 2s infinite;
-    background-color: var(--primary-dark);
-}
-
-@keyframes pulse {
+/* Анимации для записи */
+@keyframes recording-pulse {
     0% {
         box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+        transform: scale(1);
     }
-    70% {
-        box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
+    50% {
+        box-shadow: 0 0 0 8px rgba(220, 53, 69, 0);
+        transform: scale(1.05);
     }
     100% {
         box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+        transform: scale(1);
     }
+}
+
+#recordButton.recording {
+    animation: recording-pulse 2s infinite;
+    background-color: var(--primary-dark);
+    transform-origin: center;
 }
 
 #recordingStatus {
@@ -1122,5 +1128,179 @@ textarea.form-control {
     to {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+/* Message Animation */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.message-fade-in {
+    animation: fadeInUp 0.4s ease-out forwards;
+}
+
+.timeline-item, .conversation-entry {
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+.timeline-item.message-fade-in, .conversation-entry.message-fade-in {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Agent response animation */
+@keyframes pulse-subtle {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.02);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.agent-content {
+    transition: all 0.3s ease-out;
+}
+
+/* Agent Content Animations */
+.agent-content.processing {
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.agent-content.response-update {
+    animation: pulse-subtle 0.8s ease-out;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+    transition: background-color 1s ease-out;
+}
+
+/* Loading animation for agent content */
+@keyframes typing {
+    0% { content: 'Обработка.'; }
+    33% { content: 'Обработка..'; }
+    66% { content: 'Обработка...'; }
+    100% { content: 'Обработка.'; }
+}
+
+.agent-content.processing::after {
+    content: '';
+    animation: typing 1.5s infinite;
+}
+
+/* Improve agent card expand/collapse animation */
+.agent-card .agent-content {
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.4s cubic-bezier(0.22, 0.61, 0.36, 1);
+    padding: 0 15px;
+}
+
+.agent-card .agent-content.expanded {
+    max-height: 500px; /* Use a very large value to accommodate any content */
+    padding: 15px 15px;
+}
+
+/* Индикатор статуса обработки транскрибирования */
+.transcribing-status {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 20px;
+    z-index: 1000;
+    font-size: 14px;
+    pointer-events: none;
+}
+
+/* Пульсация timeline при добавлении новых сообщений */
+@keyframes timeline-update {
+    0% {
+        background-color: transparent;
+    }
+    50% {
+        background-color: rgba(var(--primary-rgb), 0.1);
+    }
+    100% {
+        background-color: transparent;
+    }
+}
+
+.conversation-timeline.updating {
+    animation: timeline-update 1s ease-out;
+}
+
+/* Toast notifications */
+.notification-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: var(--background-lighter);
+    border-left: 4px solid var(--info);
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    padding: 0;
+    min-width: 260px;
+    max-width: 100%;
+    transform: translateX(120%);
+    opacity: 0;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    z-index: 1050;
+}
+
+.notification-toast.show {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.notification-toast.error {
+    border-left-color: var(--primary);
+}
+
+.notification-toast.success {
+    border-left-color: var(--success);
+}
+
+.notification-toast.warning {
+    border-left-color: var(--warning);
+}
+
+.notification-content {
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+}
+
+.notification-content i {
+    margin-right: 10px;
+    font-size: 18px;
+}
+
+.notification-content span {
+    flex-grow: 1;
+    font-size: 14px;
+}
+
+/* Для мобильных устройств */
+@media (max-width: 576px) {
+    .notification-toast {
+        left: 20px;
+        right: 20px;
+        min-width: auto;
     }
 } 

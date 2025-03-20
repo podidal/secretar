@@ -179,22 +179,8 @@ const AgentManager = (function() {
             button.addEventListener('click', handleDeleteAgent);
         });
         
-        // Expand buttons
-        document.querySelectorAll('.expand-button').forEach(button => {
-            button.addEventListener('click', () => {
-                const card = button.closest('.agent-card');
-                const content = card.querySelector('.agent-content');
-                const icon = button.querySelector('i');
-                
-                if (content.style.maxHeight) {
-                    content.style.maxHeight = null;
-                    icon.classList.replace('fa-chevron-up', 'fa-chevron-down');
-                } else {
-                    content.style.maxHeight = content.scrollHeight + "px";
-                    icon.classList.replace('fa-chevron-down', 'fa-chevron-up');
-                }
-            });
-        });
+        // Set up expansion buttons
+        setupAgentExpandButtons();
     }
     
     // Handle click on edit agent button
@@ -635,21 +621,7 @@ const AudioRecordingSystem = () => {
             });
 
             // Set up agent card expansion buttons
-            document.querySelectorAll('.expand-button').forEach(button => {
-                button.addEventListener('click', () => {
-                    const card = button.closest('.agent-card');
-                    const content = card.querySelector('.agent-content');
-                    const icon = button.querySelector('i');
-                    
-                    if (content.style.maxHeight) {
-                        content.style.maxHeight = null;
-                        icon.classList.replace('fa-chevron-up', 'fa-chevron-down');
-                    } else {
-                        content.style.maxHeight = content.scrollHeight + "px";
-                        icon.classList.replace('fa-chevron-down', 'fa-chevron-up');
-                    }
-                });
-            });
+            setupAgentExpandButtons();
 
             // Set up search functionality
             const searchInput = document.querySelector('.search-input');
@@ -704,6 +676,9 @@ const AudioRecordingSystem = () => {
                 recordButton.innerHTML = '<i class="fas fa-stop"></i>';
                 recordButton.classList.add('recording');
                 
+                // Визуальное оповещение о начале записи
+                showNotification('Запись началась');
+                
                 // Setup audio context for waveform visualization
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 analyser = audioContext.createAnalyser();
@@ -749,6 +724,10 @@ const AudioRecordingSystem = () => {
                 isRecording = false;
                 recordButton.innerHTML = '<i class="fas fa-microphone"></i>';
                 recordButton.classList.remove('recording');
+                
+                // Показать уведомление
+                showNotification('Запись остановлена', 'success');
+                
                 showStatus('Recording stopped');
                 
                 // Stop audio context
@@ -871,6 +850,17 @@ function blobToBase64(blob) {
 // Transcribe audio using Google Gemini API
 async function transcribeAudio(audioBlob) {
     try {
+        // Check if we already have a transcription in progress
+        if (document.querySelector('.transcribing-status')) {
+            return; // Prevent duplicate processing
+        }
+        
+        // Add status indicator
+        const statusIndicator = document.createElement('div');
+        statusIndicator.className = 'transcribing-status';
+        statusIndicator.style.display = 'none';
+        document.body.appendChild(statusIndicator);
+        
         // Convert audio blob to base64
         const audioBase64 = await blobToBase64(audioBlob);
         
@@ -907,6 +897,9 @@ async function transcribeAudio(audioBlob) {
             body: JSON.stringify(payload)
         });
         
+        // Remove status indicator
+        statusIndicator.remove();
+        
         // Check if the request was successful
         if (!response.ok) {
             const errorData = await response.json();
@@ -923,7 +916,7 @@ async function transcribeAudio(audioBlob) {
         updateConversationText(transcribedText);
         
         // Process text with agents
-        await processWithAgents(transcribedText);
+        await AgentManager.processWithAgents(transcribedText);
         
         // Update status
         showStatus('Transcription complete');
@@ -931,11 +924,19 @@ async function transcribeAudio(audioBlob) {
     } catch (error) {
         console.error('Error transcribing audio:', error);
         showStatus('Error in speech recognition');
+        
+        // Remove status indicator if it exists
+        const statusIndicator = document.querySelector('.transcribing-status');
+        if (statusIndicator) {
+            statusIndicator.remove();
+        }
     }
 }
 
 // Update conversation text in timeline
 function updateConversationText(text) {
+    if (!text.trim()) return; // Игнорировать пустой текст
+    
     // Get current timestamp
     const timestamp = new Date().toLocaleTimeString();
     const shortTime = timestamp.replace(/:\d\d\s/, ' ');
@@ -952,16 +953,25 @@ function updateConversationText(text) {
         </div>
     `;
     
+    // Add animation class
+    timelineItem.classList.add('message-fade-in');
+    
+    // Добавить эффект обновления на timeline
+    conversationTimeline.classList.add('updating');
+    setTimeout(() => {
+        conversationTimeline.classList.remove('updating');
+    }, 1000);
+    
     // Append to timeline
     conversationTimeline.appendChild(timelineItem);
     
-    // Also append to conversation text view
-    const formattedText = `<div class="conversation-entry">
+    // For conversation text view, check if we already have an entry for this timestamp
+    const formattedText = `<div class="conversation-entry message-fade-in">
         <div class="timestamp">${timestamp}</div>
         <div class="text">${text}</div>
     </div>`;
     
-    conversationText.innerHTML += formattedText;
+    conversationText.insertAdjacentHTML('beforeend', formattedText);
     
     // Scroll to newest message
     timelineItem.scrollIntoView({ behavior: 'smooth', block: 'end' });
@@ -977,6 +987,7 @@ async function processWithAgents(text) {
 async function getAgentResponse(element, text, prompt) {
     try {
         element.innerHTML = 'Обработка...';
+        element.classList.add('processing');
         
         // Prepare the request payload
         const payload = {
@@ -1018,12 +1029,31 @@ async function getAgentResponse(element, text, prompt) {
         // Extract the agent's response
         const agentResponse = data.candidates[0].content.parts[0].text;
         
-        // Update the agent's response element
+        // Update the agent's response element with animation
+        element.classList.remove('processing');
+        element.classList.add('response-update');
         element.innerHTML = agentResponse;
+        
+        // Expand the agent card to show response
+        const agentCard = element.closest('.agent-card');
+        if (agentCard) {
+            const content = agentCard.querySelector('.agent-content');
+            const expandButton = agentCard.querySelector('.expand-button i');
+            if (content && expandButton) {
+                content.style.maxHeight = content.scrollHeight + "px";
+                expandButton.classList.replace('fa-chevron-down', 'fa-chevron-up');
+            }
+        }
+        
+        // Remove animation class after animation completes
+        setTimeout(() => {
+            element.classList.remove('response-update');
+        }, 1000);
         
     } catch (error) {
         console.error(`Error getting agent response:`, error);
-        element.innerHTML = `Error processing`;
+        element.classList.remove('processing');
+        element.innerHTML = `Ошибка обработки`;
     }
 }
 
@@ -1069,6 +1099,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Инициализация системы агентов
     AgentManager.init();
     
+    // Настройка анимаций разворачивания карточек
+    setupAgentExpandButtons();
+    
     // Инициализация системы записи
     const recordingSystem = AudioRecordingSystem();
     recordingSystem.init();
@@ -1087,4 +1120,64 @@ function checkDOMElements() {
             console.warn(`Element ${el.name} (${el.id}) not found in DOM.`);
         }
     });
+}
+
+// Improved setup for agent card expansion buttons
+function setupAgentExpandButtons() {
+    document.querySelectorAll('.expand-button').forEach(button => {
+        button.addEventListener('click', (e) => {
+            const card = button.closest('.agent-card');
+            const content = card.querySelector('.agent-content');
+            const icon = button.querySelector('i');
+            
+            if (content.style.maxHeight) {
+                content.style.maxHeight = null;
+                content.classList.remove('expanded');
+                icon.classList.replace('fa-chevron-up', 'fa-chevron-down');
+                button.setAttribute('title', 'Развернуть');
+            } else {
+                content.classList.add('expanded');
+                content.style.maxHeight = content.scrollHeight + "px";
+                icon.classList.replace('fa-chevron-down', 'fa-chevron-up');
+                button.setAttribute('title', 'Свернуть');
+            }
+            
+            // Animate the content with a subtle highlight
+            content.classList.add('response-update');
+            setTimeout(() => {
+                content.classList.remove('response-update');
+            }, 800);
+            
+            e.stopPropagation(); // Prevent event bubbling
+        });
+    });
+}
+
+// Function to show notification
+function showNotification(message, type = 'info') {
+    // Создать элемент уведомления
+    const notification = document.createElement('div');
+    notification.className = `notification-toast ${type}`;
+    notification.innerHTML = `
+        <div class="notification-content">
+            <i class="fas ${type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    // Добавить на страницу
+    document.body.appendChild(notification);
+    
+    // Показать с анимацией
+    setTimeout(() => {
+        notification.classList.add('show');
+    }, 10);
+    
+    // Удалить через 3 секунды
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => {
+            notification.remove();
+        }, 300);
+    }, 3000);
 } 

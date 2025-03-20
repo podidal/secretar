@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест загрузки аудио для Gemini API</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #2c3e50;
+        }
+        .container {
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #fff;
+            min-height: 100px;
+            white-space: pre-wrap;
+        }
+        .status {
+            margin-top: 10px;
+            font-style: italic;
+            color: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+    <h1>Тест загрузки аудио для Gemini API</h1>
+    
+    <div class="container">
+        <div class="form-group">
+            <label for="audioFile">Выберите аудиофайл (WAV, MP3, OGG):</label>
+            <input type="file" id="audioFile" accept="audio/*">
+        </div>
+        
+        <button id="transcribeButton">Распознать аудио</button>
+        
+        <div class="status" id="status"></div>
+        
+        <h3>Результат распознавания:</h3>
+        <div id="result">Здесь будет отображен результат распознавания...</div>
+    </div>
+    
+    <script>
+        // Gemini API Key
+        const GEMINI_API_KEY = 'AIzaSyB8oKZIbyeH7Ttv2kmTn8cEhFiUYKolv3g';
+        const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
+        const GEMINI_MODEL = 'gemini-1.5-flash'; // Using Gemini 1.5 Flash for faster responses
+        
+        // DOM Elements
+        const audioFileInput = document.getElementById('audioFile');
+        const transcribeButton = document.getElementById('transcribeButton');
+        const statusElement = document.getElementById('status');
+        const resultElement = document.getElementById('result');
+        
+        // Event Listeners
+        transcribeButton.addEventListener('click', handleTranscription);
+        
+        // Convert file to base64
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    // Get the base64 string by removing the Data URL prefix
+                    const base64String = reader.result.split(',')[1];
+                    resolve(base64String);
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+        
+        // Handle transcription
+        async function handleTranscription() {
+            try {
+                // Check if a file is selected
+                const file = audioFileInput.files[0];
+                if (!file) {
+                    alert('Пожалуйста, выберите аудиофайл');
+                    return;
+                }
+                
+                // Update status
+                statusElement.textContent = 'Загрузка и обработка аудио...';
+                
+                // Convert file to base64
+                const audioBase64 = await fileToBase64(file);
+                
+                // Prepare the request payload
+                const payload = {
+                    contents: [
+                        {
+                            parts: [
+                                {
+                                    text: "Пожалуйста, расшифруй следующую аудиозапись на русском языке. Дай только текст без дополнительных комментариев."
+                                },
+                                {
+                                    inline_data: {
+                                        mime_type: file.type,
+                                        data: audioBase64
+                                    }
+                                }
+                            ]
+                        }
+                    ],
+                    generation_config: {
+                        temperature: 0.2,
+                        top_p: 0.8,
+                        top_k: 40
+                    }
+                };
+                
+                // Make the API request
+                statusElement.textContent = 'Отправка запроса к Gemini API...';
+                
+                const response = await fetch(`${GEMINI_API_URL}/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                // Check if the request was successful
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`API error: ${errorData.error.message || response.statusText}`);
+                }
+                
+                // Parse the response
+                const data = await response.json();
+                
+                // Extract the transcription text
+                const transcriptionResult = data.candidates[0].content.parts[0].text;
+                
+                // Display the result
+                resultElement.textContent = transcriptionResult;
+                statusElement.textContent = 'Распознавание завершено успешно!';
+                
+            } catch (error) {
+                console.error('Error transcribing audio:', error);
+                statusElement.textContent = 'Ошибка: ' + error.message;
+                resultElement.textContent = 'Произошла ошибка при распознавании аудио. Пожалуйста, попробуйте еще раз.';
+            }
+        }
+    </script>
+</body>
+</html> 

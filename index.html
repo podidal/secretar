@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Секретарь - Запись и распознавание разговоров</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Секретарь</h1>
+            <p class="subtitle">Запись и распознавание разговоров</p>
+        </header>
+
+        <main>
+            <section class="settings-section">
+                <h2>Настройки</h2>
+                <div class="settings-container">
+                    <div class="setting-item">
+                        <label for="sendFrequency">Частота отправки (секунды): <span id="frequencyValue">10</span></label>
+                        <input type="range" id="sendFrequency" min="5" max="60" step="5" value="10">
+                    </div>
+                    <div class="setting-item">
+                        <label class="switch">
+                            <input type="checkbox" id="autoSendToggle" checked>
+                            <span class="slider round"></span>
+                            <span class="switch-label">Автоматическая отправка</span>
+                        </label>
+                    </div>
+                </div>
+            </section>
+
+            <section class="recorder-section">
+                <div class="recorder-container">
+                    <div class="visualizer-container">
+                        <canvas id="visualizer"></canvas>
+                    </div>
+                    <div class="recorder-controls">
+                        <button id="recordButton" class="btn record-btn">
+                            <span class="record-icon"></span>
+                            Начать запись
+                        </button>
+                        <div class="playback-controls">
+                            <button id="playButton" class="btn playback-btn" disabled>
+                                <span class="play-icon"></span>
+                                Прослушать
+                            </button>
+                            <button id="recognizeButton" class="btn recognize-btn" disabled>
+                                <span class="recognize-icon"></span>
+                                Распознать
+                            </button>
+                        </div>
+                        <div id="recordingStatus" class="recording-status">Готов к записи</div>
+                        <div id="recordingTimer" class="recording-timer">00:00</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="conversation-section">
+                <h2>Распознанный текст</h2>
+                <div id="recognitionStatus" class="recognition-status"></div>
+                <div id="conversationText" class="conversation-text"></div>
+            </section>
+
+            <section class="agents-section">
+                <h2>Комментарии ИИ-агентов</h2>
+                <div class="agents-container">
+                    <div class="agent-card">
+                        <h3>Шутник</h3>
+                        <div class="agent-response" id="agent-joker"></div>
+                    </div>
+                    <div class="agent-card">
+                        <h3>Скептик</h3>
+                        <div class="agent-response" id="agent-skeptic"></div>
+                    </div>
+                    <div class="agent-card">
+                        <h3>Умник</h3>
+                        <div class="agent-response" id="agent-smart"></div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>© 2023 Секретарь - Приложение для записи и распознавания разговоров</p>
+        </footer>
+    </div>
+
+    <script src="visualizer.js"></script>
+    <script src="script.js"></script>
+</body>
+</html> 

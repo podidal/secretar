@@ -26,6 +26,8 @@ const autoSendToggle = document.getElementById('autoSendToggle');
 const visualizerMode = document.getElementById('visualizerMode');
 const effectMode = document.getElementById('effectMode');
 const visualizerToggle = document.getElementById('visualizerToggle');
+const themeToggle = document.getElementById('themeToggle');
+const themeLabel = document.getElementById('themeLabel');
 
 // DOM Elements - Tabs
 const tabs = document.querySelectorAll('.tab');
@@ -368,6 +370,9 @@ let isRecording = false;
                     }
                 });
             });
+
+            // Theme toggle
+            themeToggle.addEventListener('change', toggleTheme);
         },
         
         startRecording: async function() {
@@ -737,6 +742,22 @@ async function getAgentResponse(element, text, agentType) {
     }
 }
 
+// Theme handling
+function initTheme() {
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    document.body.setAttribute('data-theme', savedTheme);
+    themeToggle.checked = savedTheme === 'light';
+    themeLabel.textContent = savedTheme === 'light' ? 'Светлая' : 'Тёмная';
+}
+
+function toggleTheme() {
+    const currentTheme = document.body.getAttribute('data-theme');
+    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+    document.body.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+    themeLabel.textContent = newTheme === 'light' ? 'Светлая' : 'Тёмная';
+}
+
 // Initialize visualizer
 let visualizerInstance;
 try {
@@ -744,39 +765,19 @@ try {
     import('./tentacles-visualizer.js').then(module => {
         const { TentaclesVisualizer } = module;
         
-        // Create visualizer based on selected mode
-        const mode = visualizerMode.value;
-        if (mode === 'tentacles') {
-            visualizerInstance = new TentaclesVisualizer(visualizer, {
-                numTentacles: 8,
-                baseColor: [220, 53, 69], // Match the red theme
-                tentacleWidth: 6,
-                segments: 20,
-                cohesionStrength: 0.01,
-                centerAttraction: 0.0005,
-                noiseSpeed: 0.01,
-                volumeSmoothing: 0.1
-            });
-        } else {
-            visualizerInstance = new AdvancedVisualizer(visualizer, {
-                mode: 'waves+particles',
-                visualMode: mode,
-                particleCount: 150,
-                particleSize: 3,
-                particleSpeed: 0.8,
-                murmurmationStrength: 0.4,
-                glowEffect: true,
-                backgroundColor: '#1a1a1a',
-                smoothingTimeConstant: 0.8,
-                gradientColors: [
-                    { stop: 0, color: '#dc3545' },
-                    { stop: 0.5, color: '#ff6b81' },
-                    { stop: 1, color: '#dc3545' }
-                ],
-                waveThickness: 3
-            });
-        }
-        console.log('Visualizer initialized successfully');
+        // Create tentacles visualizer with theme-aware colors
+        visualizerInstance = new TentaclesVisualizer(visualizer, {
+            numTentacles: 8,
+            baseColor: [220, 53, 69], // Match the red theme
+            tentacleWidth: 6,
+            segments: 20,
+            cohesionStrength: 0.01,
+            centerAttraction: 0.0005,
+            noiseSpeed: 0.01,
+            volumeSmoothing: 0.1
+        });
+        
+        console.log('Tentacles visualizer initialized successfully');
     }).catch(error => {
         console.error('Error importing TentaclesVisualizer:', error);
         createFallbackVisualizer();
@@ -814,7 +815,7 @@ function createWaveformVisualization() {
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
-    createWaveformVisualization();
+    initTheme();
     const recordingSystem = AudioRecordingSystem();
     recordingSystem.init();
 }); 

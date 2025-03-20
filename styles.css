@@ -1,6 +1,6 @@
 /* CSS Variables for Theme Colors */
 :root {
-    /* Main Colors */
+    /* Dark Theme Colors (default) */
     --primary: #dc3545;
     --primary-dark: #c82333;
     --primary-light: #ff6b81;
@@ -10,6 +10,8 @@
     --text: #f0f0f0;
     --text-secondary: #b0b0b0;
     --border: #3a3a3a;
+    --card-bg: #1e1e1e;
+    --shadow: rgba(0, 0, 0, 0.25);
     
     /* Message Colors */
     --primary-msg: #7e57c2; /* Purple for regular messages */
@@ -25,7 +27,44 @@
     --success: #4caf50;
     --warning: #ff9800;
     --info: #2196f3;
-    --shadow: rgba(0, 0, 0, 0.25);
+}
+
+/* Light Theme Colors */
+[data-theme="light"] {
+    --primary: #dc3545;
+    --primary-dark: #c82333;
+    --primary-light: #ff6b81;
+    --background: #f5f5f5;
+    --background-light: #ffffff;
+    --background-lighter: #f0f0f0;
+    --text: #333333;
+    --text-secondary: #666666;
+    --border: #dddddd;
+    --card-bg: #ffffff;
+    --shadow: rgba(0, 0, 0, 0.1);
+}
+
+/* Theme Transition */
+body {
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.switch-label {
+    margin-left: 10px;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+/* Update existing switch styles */
+.switch {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    min-width: 50px;
+}
+
+.switch input:checked + .slider + .switch-label {
+    color: var(--primary);
 }
 
 /* Base Styles */
@@ -655,54 +694,6 @@ select {
     color: var(--text);
     border: 1px solid var(--border);
     width: 60%;
-}
-
-/* Switch Toggle */
-.switch {
-    position: relative;
-    display: inline-block;
-    width: 50px;
-    height: 24px;
-}
-
-.switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-
-.switch .slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: var(--background-lighter);
-    transition: .4s;
-    border-radius: 24px;
-    width: auto;
-    height: auto;
-}
-
-.switch .slider:before {
-    position: absolute;
-    content: "";
-    height: 16px;
-    width: 16px;
-    left: 4px;
-    bottom: 4px;
-    background-color: white;
-    transition: .4s;
-    border-radius: 50%;
-}
-
-.switch input:checked + .slider {
-    background-color: var(--primary);
-}
-
-.switch input:checked + .slider:before {
-    transform: translateX(26px);
 }
 
 /* Responsive Styles */

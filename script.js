@@ -34,6 +34,9 @@ const timelineContainers = document.querySelectorAll('.timeline-container');
 // DOM Elements - Waveform Visualization
 const waveformVisualization = document.querySelector('.waveform-visualization');
 
+// Объявление глобальной переменной визуализатора
+let visualizerInstance;
+
 // Audio Recording System (Composition pattern)
 const AudioRecordingSystem = () => {
     // Private members
@@ -726,45 +729,100 @@ async function getAgentResponse(element, text, agentType) {
 function initTheme() {
     const savedTheme = localStorage.getItem('theme') || 'dark';
     document.body.setAttribute('data-theme', savedTheme);
-    themeToggle.checked = savedTheme === 'light';
-    themeLabel.textContent = savedTheme === 'light' ? 'Светлая' : 'Тёмная';
+    
+    // Проверка существования элементов перед использованием
+    const themeToggleElement = document.getElementById('themeToggle');
+    const themeLabelElement = document.getElementById('themeLabel');
+    
+    if (themeToggleElement) {
+        themeToggleElement.checked = savedTheme === 'light';
+    }
+    
+    if (themeLabelElement) {
+        themeLabelElement.textContent = savedTheme === 'light' ? 'Светлая' : 'Тёмная';
+    }
 }
 
 function toggleTheme() {
-    const currentTheme = document.body.getAttribute('data-theme');
+    const currentTheme = document.body.getAttribute('data-theme') || 'dark';
     const newTheme = currentTheme === 'light' ? 'dark' : 'light';
     document.body.setAttribute('data-theme', newTheme);
     localStorage.setItem('theme', newTheme);
-    themeLabel.textContent = newTheme === 'light' ? 'Светлая' : 'Тёмная';
+    
+    // Проверка существования элемента перед использованием
+    const themeLabelElement = document.getElementById('themeLabel');
+    if (themeLabelElement) {
+        themeLabelElement.textContent = newTheme === 'light' ? 'Светлая' : 'Тёмная';
+    }
 }
 
-// Initialize visualizer
-let visualizerInstance;
-try {
-    // Import TentaclesVisualizer
-    import('./tentacles-visualizer.js').then(module => {
-        const { TentaclesVisualizer } = module;
-        
-        // Create tentacles visualizer with theme-aware colors
-        visualizerInstance = new TentaclesVisualizer(visualizer, {
-            numTentacles: 8,
-            baseColor: [220, 53, 69], // Match the red theme
-            tentacleWidth: 6,
-            segments: 20,
-            cohesionStrength: 0.01,
-            centerAttraction: 0.0005,
-            noiseSpeed: 0.01,
-            volumeSmoothing: 0.1
-        });
-        
-        console.log('Tentacles visualizer initialized successfully');
-    }).catch(error => {
-        console.error('Error importing TentaclesVisualizer:', error);
-        createFallbackVisualizer();
+// Initialize the application
+document.addEventListener('DOMContentLoaded', () => {
+    // Инициализация темы
+    initTheme();
+    
+    // Проверка ошибок при инициализации DOM элементов
+    checkDOMElements();
+    
+    // Инициализация системы записи
+    const recordingSystem = AudioRecordingSystem();
+    recordingSystem.init();
+    
+    // Загрузка визуализатора
+    loadVisualizer();
+});
+
+// Проверка DOM-элементов перед использованием
+function checkDOMElements() {
+    const requiredElements = [
+        { id: 'themeToggle', name: 'Theme Toggle' },
+        { id: 'themeLabel', name: 'Theme Label' },
+        { id: 'visualizer', name: 'Visualizer Canvas' },
+        { id: 'visualizerToggle', name: 'Visualizer Toggle' }
+    ];
+    
+    requiredElements.forEach(el => {
+        if (!document.getElementById(el.id)) {
+            console.warn(`Element ${el.name} (${el.id}) not found in DOM.`);
+        }
     });
-} catch (error) {
-    console.error('Error initializing visualizer:', error);
-    createFallbackVisualizer();
+}
+
+// Загрузка визуализатора
+function loadVisualizer() {
+    try {
+        // Импорт модуля через динамический импорт
+        import('./tentacles-visualizer.js')
+            .then(module => {
+                const { TentaclesVisualizer } = module;
+                const visualizerCanvas = document.getElementById('visualizer');
+                
+                if (!visualizerCanvas) {
+                    throw new Error('Visualizer canvas element not found');
+                }
+                
+                // Создаем визуализатор щупалец
+                visualizerInstance = new TentaclesVisualizer(visualizerCanvas, {
+                    numTentacles: 8,
+                    baseColor: [220, 53, 69], // Match the red theme
+                    tentacleWidth: 6,
+                    segments: 20,
+                    cohesionStrength: 0.01,
+                    centerAttraction: 0.0005,
+                    noiseSpeed: 0.01,
+                    volumeSmoothing: 0.1
+                });
+                
+                console.log('Tentacles visualizer initialized successfully');
+            })
+            .catch(error => {
+                console.error('Error importing TentaclesVisualizer:', error);
+                createFallbackVisualizer();
+            });
+    } catch (error) {
+        console.error('Error initializing visualizer:', error);
+        createFallbackVisualizer();
+    }
 }
 
 // Create fallback visualizer
@@ -791,11 +849,4 @@ function createWaveformVisualization() {
         line.style.height = `${Math.random() * 50 + 5}px`;
         container.appendChild(line);
     }
-}
-
-// Initialize the application
-document.addEventListener('DOMContentLoaded', () => {
-    initTheme();
-    const recordingSystem = AudioRecordingSystem();
-    recordingSystem.init();
-}); 
+} 

@@ -761,6 +761,14 @@ select {
     .search-container {
         width: 200px;
     }
+    
+    .icon-button {
+        font-size: 1rem;
+    }
+    
+    .waveform-container, #visualizer-container {
+        margin: 0.5rem;
+    }
 }
 
 @media (max-width: 768px) {
@@ -771,6 +779,7 @@ select {
             "viz"
             "conv"
             "agents";
+        overflow-y: auto;
     }
     
     .search-container {
@@ -783,6 +792,138 @@ select {
     
     .settings-panel {
         width: 300px;
+    }
+    
+    .visualization-panel, .conversation-panel, .agents-panel {
+        max-height: none;
+        overflow: visible;
+    }
+    
+    .visualization-panel {
+        max-height: 450px;
+    }
+    
+    #recordButton {
+        width: 50px;
+        height: 50px;
+        font-size: 1.2rem;
+    }
+    
+    .playback-controls button {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .header {
+        flex-wrap: wrap;
+        height: auto;
+        padding: 0.4rem 0.8rem;
+    }
+    
+    .nav-left h1 {
+        font-size: 1rem;
+    }
+    
+    .visualization-panel {
+        max-height: 380px;
+    }
+    
+    #visualizer-container {
+        height: 150px;
+    }
+    
+    .waveform-container {
+        height: 80px;
+    }
+    
+    .tabs-container {
+        gap: 0.5rem;
+    }
+    
+    .tab {
+        padding: 0.4rem 0.6rem;
+        font-size: 0.9rem;
+    }
+    
+    .timeline-container {
+        padding: 0.5rem;
+    }
+    
+    .message-block {
+        padding: 0.8rem;
+        max-width: 95%;
+    }
+    
+    .settings-panel {
+        width: 100%;
+        right: -100%;
+    }
+    
+    .settings-panel.active {
+        right: 0;
+    }
+    
+    .agent-card {
+        margin-bottom: 0.5rem;
+    }
+    
+    .footer {
+        padding: 0.5rem;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .copyright {
+        font-size: 0.7rem;
+    }
+}
+
+/* Улучшения для мобильной ориентации */
+@media (max-height: 600px) and (orientation: landscape) {
+    .container {
+        grid-template-rows: auto 1fr auto;
+    }
+    
+    .content {
+        display: flex;
+        flex-wrap: wrap;
+        overflow-y: auto;
+    }
+    
+    .visualization-panel {
+        flex: 1 1 300px;
+        max-height: none;
+    }
+    
+    .conversation-panel {
+        flex: 2 1 400px;
+    }
+    
+    .agents-panel {
+        flex: 1 1 100%;
+    }
+    
+    .waveform-container {
+        height: 80px;
+    }
+    
+    #visualizer-container {
+        height: 120px;
+    }
+}
+
+/* Фиксы для iOS */
+@supports (-webkit-touch-callout: none) {
+    .content, .timeline-container, .settings-panel {
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 22px;
+        height: 22px;
     }
 }
 

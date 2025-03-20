@@ -1,18 +1,38 @@
-// DOM Elements
+// DOM Elements - Main UI
 const recordButton = document.getElementById('recordButton');
 const recordingStatus = document.getElementById('recordingStatus');
 const recordingTimer = document.getElementById('recordingTimer');
 const visualizer = document.getElementById('visualizer');
-const recognitionStatus = document.getElementById('recognitionStatus');
+const visualizerContainer = document.getElementById('visualizer-container');
 const conversationText = document.getElementById('conversationText');
+const conversationTimeline = document.getElementById('conversationTimeline');
+const playButton = document.getElementById('playButton');
+const recognizeButton = document.getElementById('recognizeButton');
+const audioPlayer = document.getElementById('audioPlayer');
+const summaryText = document.getElementById('summary-text');
+
+// DOM Elements - Agent Responses
 const agentJoker = document.getElementById('agent-joker');
 const agentSkeptic = document.getElementById('agent-skeptic');
 const agentSmart = document.getElementById('agent-smart');
+
+// DOM Elements - Settings Panel
+const settingsToggle = document.getElementById('settings-toggle');
+const closeSettings = document.getElementById('close-settings');
+const settingsPanel = document.getElementById('settings-panel');
 const sendFrequency = document.getElementById('sendFrequency');
 const frequencyValue = document.getElementById('frequencyValue');
 const autoSendToggle = document.getElementById('autoSendToggle');
-const playButton = document.getElementById('playButton');
-const recognizeButton = document.getElementById('recognizeButton');
+const visualizerMode = document.getElementById('visualizerMode');
+const effectMode = document.getElementById('effectMode');
+const visualizerToggle = document.getElementById('visualizerToggle');
+
+// DOM Elements - Tabs
+const tabs = document.querySelectorAll('.tab');
+const timelineContainers = document.querySelectorAll('.timeline-container');
+
+// DOM Elements - Waveform Visualization
+const waveformVisualization = document.querySelector('.waveform-visualization');
 
 // Audio Recording System (Composition pattern)
 const AudioRecordingSystem = () => {
@@ -28,7 +48,7 @@ const AudioRecordingSystem = () => {
     let autoSendInterval;
     let sendIntervalMs = 10000; // Default 10 seconds
     let isAutoSendEnabled = true;
-    let audioPlayer;
+    let waveformLines = [];
     
     // Audio Processing Component
     const audioProcessor = {
@@ -37,8 +57,7 @@ const AudioRecordingSystem = () => {
                 const audioBlob = new Blob(chunks, { type: 'audio/wav' });
                 
                 // Update status
-                const statusMessage = `Распознавание речи (фрагмент ${new Date().toLocaleTimeString()})...`;
-                updateStatus(statusMessage);
+                updateStatus(`Распознавание речи (${new Date().toLocaleTimeString()})...`);
                 
                 // Send to Google Gemini for transcription
                 await transcribeAudio(audioBlob);
@@ -49,99 +68,6 @@ const AudioRecordingSystem = () => {
                 updateStatus('Ошибка обработки аудио');
                 return false;
             }
-        }
-    };
-    
-    // Playback Component
-    const playbackComponent = {
-        setup: function() {
-            // Create audio element
-            audioPlayer = document.createElement('audio');
-            audioPlayer.className = 'audio-player';
-            audioPlayer.controls = true;
-            document.querySelector('.recorder-controls').appendChild(audioPlayer);
-            
-            // Set up play button
-            playButton.addEventListener('click', () => {
-                if (audioPlayer.paused) {
-                    audioPlayer.play();
-                    playButton.innerHTML = '<span class="play-icon"></span>Пауза';
-                } else {
-                    audioPlayer.pause();
-                    playButton.innerHTML = '<span class="play-icon"></span>Прослушать';
-                }
-            });
-            
-            // Set up audio player events
-            audioPlayer.addEventListener('ended', () => {
-                playButton.innerHTML = '<span class="play-icon"></span>Прослушать';
-            });
-        },
-        
-        updateAudio: function(chunks) {
-            const audioBlob = new Blob(chunks, { type: 'audio/wav' });
-            const audioUrl = URL.createObjectURL(audioBlob);
-            audioPlayer.src = audioUrl;
-            audioPlayer.classList.add('visible');
-            playButton.disabled = false;
-            recognizeButton.disabled = false;
-        },
-        
-        clear: function() {
-            audioPlayer.src = '';
-            audioPlayer.classList.remove('visible');
-            playButton.disabled = true;
-            recognizeButton.disabled = true;
-            playButton.innerHTML = '<span class="play-icon"></span>Прослушать';
-        }
-    };
-    
-    // Visualizer Component
-    const visualizerComponent = {
-        setup: function() {
-            const visualizerContext = visualizer.getContext('2d');
-            
-            // Set canvas dimensions
-            visualizer.width = visualizer.clientWidth;
-            visualizer.height = visualizer.clientHeight;
-            
-            // Initial clear
-            visualizerContext.fillStyle = '#f0f2f5';
-            visualizerContext.fillRect(0, 0, visualizer.width, visualizer.height);
-            
-            return visualizerContext;
-        },
-        
-        draw: function(analyserNode, visualizerContext) {
-            if (!isRecording) return;
-            
-            // Get frequency data
-            const bufferLength = analyserNode.frequencyBinCount;
-            const dataArray = new Uint8Array(bufferLength);
-            analyserNode.getByteFrequencyData(dataArray);
-            
-            // Clear canvas
-            visualizerContext.fillStyle = '#f0f2f5';
-            visualizerContext.fillRect(0, 0, visualizer.width, visualizer.height);
-            
-            // Draw bars
-            const barWidth = (visualizer.width / bufferLength) * 2.5;
-            let x = 0;
-            
-            for (let i = 0; i < bufferLength; i++) {
-                const barHeight = (dataArray[i] / 255) * visualizer.height;
-                
-                // Use gradient color based on frequency
-                const hue = i / bufferLength * 360;
-                visualizerContext.fillStyle = `hsl(${hue}, 70%, 60%)`;
-                
-                visualizerContext.fillRect(x, visualizer.height - barHeight, barWidth, barHeight);
-                
-                x += barWidth + 1;
-            }
-            
-            // Request next frame
-            requestAnimationFrame(() => visualizerComponent.draw(analyserNode, visualizerContext));
         }
     };
     
@@ -163,6 +89,62 @@ const AudioRecordingSystem = () => {
         }
     };
     
+    // Waveform Visualization Component
+    const waveformComponent = {
+        setup: function() {
+            // Clear any existing waveform
+            waveformVisualization.innerHTML = '';
+            waveformLines = [];
+            
+            // Create waveform lines
+            const numLines = 60;
+            for (let i = 0; i < numLines; i++) {
+                const line = document.createElement('div');
+                line.className = 'waveform-line';
+                line.style.height = '2px';
+                waveformVisualization.appendChild(line);
+                waveformLines.push(line);
+            }
+        },
+        
+        updateWaveform: function(dataArray) {
+            if (!waveformLines.length) return;
+            
+            // Get a slice of the data array for visualization
+            const sliceWidth = Math.floor(dataArray.length / waveformLines.length);
+            
+            for (let i = 0; i < waveformLines.length; i++) {
+                // Calculate the height based on the audio data
+                let value = 0;
+                for (let j = 0; j < sliceWidth; j++) {
+                    const index = i * sliceWidth + j;
+                    if (index < dataArray.length) {
+                        value += dataArray[index];
+                    }
+                }
+                value = value / sliceWidth;
+                
+                // Scale value to a reasonable height
+                const height = (value / 255) * 100;
+                waveformLines[i].style.height = `${Math.max(2, height)}px`;
+            }
+        },
+        
+        animateWaveform: function() {
+            if (!analyser || !isRecording) return;
+            
+            // Get frequency data
+            const dataArray = new Uint8Array(analyser.frequencyBinCount);
+            analyser.getByteFrequencyData(dataArray);
+            
+            // Update the waveform visualization
+            this.updateWaveform(dataArray);
+            
+            // Request next animation frame
+            requestAnimationFrame(() => this.animateWaveform());
+        }
+    };
+    
     // Auto-sending Component
     const autoSendComponent = {
         start: function(intervalMs) {
@@ -179,9 +161,6 @@ const AudioRecordingSystem = () => {
                     
                     // Process the audio chunks
                     await audioProcessor.processAudioChunk(chunksToProcess);
-                    
-                    // Don't clear audioChunks as we want to keep recording
-                    // We just want to process what we have so far
                 }
             }, intervalMs);
         },
@@ -217,16 +196,33 @@ const AudioRecordingSystem = () => {
     return {
         init: function() {
             // Initialize UI components and settings
-            const visualizerContext = visualizerComponent.setup();
-            playbackComponent.setup();
+            this.setupEventListeners();
+            waveformComponent.setup();
             
-            // Set up event listeners
+            // Initialize with default values
+            frequencyValue.textContent = sendFrequency.value;
+            sendIntervalMs = parseInt(sendFrequency.value) * 1000;
+            isAutoSendEnabled = autoSendToggle.checked;
+        },
+        
+        setupEventListeners: function() {
+            // Set up record button
             recordButton.addEventListener('click', () => {
                 if (!isRecording) {
                     this.startRecording();
                 } else {
                     this.stopRecording();
                 }
+            });
+            
+            // Set up settings toggle
+            settingsToggle.addEventListener('click', () => {
+                settingsPanel.classList.add('active');
+            });
+            
+            // Set up close settings button
+            closeSettings.addEventListener('click', () => {
+                settingsPanel.classList.remove('active');
             });
             
             // Set up send frequency slider
@@ -241,6 +237,11 @@ const AudioRecordingSystem = () => {
                 autoSendComponent.setEnabled(autoSendToggle.checked);
             });
             
+            // Set up visualizer toggle
+            visualizerToggle.addEventListener('change', () => {
+                visualizerContainer.style.display = visualizerToggle.checked ? 'block' : 'none';
+            });
+            
             // Set up recognize button
             recognizeButton.addEventListener('click', async () => {
                 if (audioChunks.length > 0) {
@@ -248,10 +249,68 @@ const AudioRecordingSystem = () => {
                 }
             });
             
-            // Initialize with default values
-            frequencyValue.textContent = sendFrequency.value;
-            sendIntervalMs = parseInt(sendFrequency.value) * 1000;
-            isAutoSendEnabled = autoSendToggle.checked;
+            // Set up play button
+            playButton.addEventListener('click', () => {
+                if (audioPlayer.paused) {
+                    audioPlayer.play();
+                    playButton.innerHTML = '<i class="fas fa-pause"></i> Пауза';
+                } else {
+                    audioPlayer.pause();
+                    playButton.innerHTML = '<i class="fas fa-play"></i> Прослушать';
+                }
+            });
+            
+            // Set up audio player events
+            audioPlayer.addEventListener('ended', () => {
+                playButton.innerHTML = '<i class="fas fa-play"></i> Прослушать';
+            });
+            
+            // Set up visualizer mode select
+            visualizerMode.addEventListener('change', () => {
+                try {
+                    visualizerInstance.setVisualMode(visualizerMode.value);
+                } catch (error) {
+                    console.error('Ошибка изменения режима визуализации:', error);
+                }
+            });
+            
+            // Set up effect mode select
+            effectMode.addEventListener('change', () => {
+                try {
+                    visualizerInstance.setMode(effectMode.value);
+                } catch (error) {
+                    console.error('Ошибка изменения эффекта:', error);
+                }
+            });
+            
+            // Set up tabs
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // Remove active class from all tabs
+                    tabs.forEach(t => t.classList.remove('active'));
+                    
+                    // Add active class to clicked tab
+                    tab.classList.add('active');
+                    
+                    // Hide all tab contents
+                    timelineContainers.forEach(content => {
+                        content.style.display = 'none';
+                    });
+                    
+                    // Show selected tab content
+                    const tabId = tab.getAttribute('data-tab');
+                    document.getElementById(`${tabId}-tab`).style.display = 'block';
+                });
+            });
+            
+            // Close settings panel when clicking outside
+            document.addEventListener('click', (event) => {
+                if (settingsPanel.classList.contains('active') && 
+                    !settingsPanel.contains(event.target) && 
+                    event.target !== settingsToggle) {
+                    settingsPanel.classList.remove('active');
+                }
+            });
         },
         
         startRecording: async function() {
@@ -260,17 +319,33 @@ const AudioRecordingSystem = () => {
                 mediaRecorder = new MediaRecorder(stream);
                 audioChunks = [];
                 isRecording = true;
-                recordButton.textContent = '⏹️';
+                recordButton.innerHTML = '<i class="fas fa-stop"></i>';
                 recordButton.classList.add('recording');
-                recordingStatus.textContent = 'Запись началась...';
                 
-                // Настраиваем визуализатор
-                visualizerInstance.setupAudioAnalyser(stream);
+                // Setup audio context for waveform visualization
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 2048;
+                
+                const source = audioContext.createMediaStreamSource(stream);
+                source.connect(analyser);
+                
+                showStatus('Запись началась...');
+                
+                // Start waveform animation
+                waveformComponent.animateWaveform();
+                
+                // Setup visualizer
+                try {
+                    visualizerInstance.setupAudioAnalyser(stream);
+                } catch (vizError) {
+                    console.error('Ошибка настройки визуализатора:', vizError);
+                }
                 
                 mediaRecorder.ondataavailable = (event) => {
                     if (event.data.size > 0) {
                         audioChunks.push(event.data);
-                        // Обновляем аудио для воспроизведения
+                        // Update audio for playback
                         const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
                         const audioUrl = URL.createObjectURL(audioBlob);
                         audioPlayer.src = audioUrl;
@@ -279,17 +354,17 @@ const AudioRecordingSystem = () => {
                     }
                 };
                 
-                mediaRecorder.start(1000); // Записываем чанки каждую секунду
+                mediaRecorder.start(1000); // Capture chunks every second
                 recordingStartTime = Date.now();
                 timerComponent.start(recordingStartTime);
                 
-                // Запускаем автоматическую отправку, если включена
+                // Start auto-sending if enabled
                 if (autoSendToggle.checked) {
                     autoSendComponent.start(sendIntervalMs);
                 }
             } catch (error) {
-                console.error('Ошибка при записи:', error);
-                recordingStatus.textContent = 'Ошибка при записи: ' + error.message;
+                console.error('Error starting recording:', error);
+                showStatus('Error starting recording: ' + error.message);
             }
         },
         
@@ -297,23 +372,31 @@ const AudioRecordingSystem = () => {
             if (mediaRecorder && isRecording) {
                 mediaRecorder.stop();
                 isRecording = false;
-                recordButton.textContent = '🎤';
+                recordButton.innerHTML = '<i class="fas fa-microphone"></i>';
                 recordButton.classList.remove('recording');
-                recordingStatus.textContent = 'Запись остановлена';
+                showStatus('Recording stopped');
                 
-                // Останавливаем визуализатор
+                // Stop audio context
+                if (audioContext) {
+                    audioContext.close().catch(e => console.error('Error closing audio context:', e));
+                }
+                
+                // Stop visualizer
                 visualizerInstance.stop();
                 
-                // Останавливаем таймер
+                // Stop timer
                 timerComponent.stop();
                 
-                // Останавливаем автоматическую отправку
+                // Stop auto-sending
                 autoSendComponent.stop();
                 
-                // Останавливаем воспроизведение
+                // Stop playback
                 audioPlayer.pause();
                 audioPlayer.currentTime = 0;
-                playButton.textContent = '▶️';
+                playButton.innerHTML = '<i class="fas fa-play"></i> Прослушать';
+                
+                // Generate summary
+                generateSummary();
             }
         }
     };
@@ -321,8 +404,77 @@ const AudioRecordingSystem = () => {
 
 // Helper function to update status message
 function updateStatus(message) {
+    showStatus(message);
+}
+
+// Helper function to show status temporarily
+function showStatus(message) {
     recordingStatus.textContent = message;
-    recognitionStatus.textContent = message;
+    recordingStatus.classList.add('active');
+    
+    // Hide after 3 seconds
+    setTimeout(() => {
+        recordingStatus.classList.remove('active');
+    }, 3000);
+}
+
+// Generate summary of conversation
+async function generateSummary() {
+    try {
+        if (conversationText.textContent.trim() === '') {
+            summaryText.textContent = 'Недостаточно данных для формирования итогов.';
+            return;
+        }
+        
+        summaryText.textContent = 'Формирование итогов...';
+        
+        // Prepare the request payload for summary
+        const payload = {
+            contents: [
+                {
+                    parts: [
+                        {
+                            text: `Создай краткое резюме следующего разговора: "${conversationText.textContent}"`
+                        }
+                    ]
+                }
+            ],
+            generation_config: {
+                temperature: 0.4,
+                top_p: 0.8,
+                top_k: 40,
+                max_output_tokens: 300
+            }
+        };
+        
+        // Make the API request
+        const response = await fetch(`${GEMINI_API_URL}/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+        
+        // Check if the request was successful
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`API error: ${errorData.error.message || response.statusText}`);
+        }
+        
+        // Parse the response
+        const data = await response.json();
+        
+        // Extract the summary
+        const summary = data.candidates[0].content.parts[0].text;
+        
+        // Update the summary text
+        summaryText.textContent = summary;
+        
+    } catch (error) {
+        console.error('Error generating summary:', error);
+        summaryText.textContent = 'Ошибка при формировании итогов.';
+    }
 }
 
 // Gemini API Key
@@ -402,20 +554,36 @@ async function transcribeAudio(audioBlob) {
         await processWithAgents(transcribedText);
         
         // Update status
-        recognitionStatus.textContent = 'Распознавание завершено';
+        showStatus('Transcription complete');
         
     } catch (error) {
         console.error('Error transcribing audio:', error);
-        recognitionStatus.textContent = 'Ошибка распознавания речи';
+        showStatus('Error in speech recognition');
     }
 }
 
-// Update conversation text
+// Update conversation text in timeline
 function updateConversationText(text) {
     // Get current timestamp
     const timestamp = new Date().toLocaleTimeString();
+    const shortTime = timestamp.replace(/:\d\d\s/, ' ');
     
-    // Append new text with timestamp
+    // Create timeline item
+    const timelineItem = document.createElement('div');
+    timelineItem.className = 'timeline-item';
+    
+    // Add timestamp and message
+    timelineItem.innerHTML = `
+        <div class="timestamp">${shortTime}</div>
+        <div class="message-block primary">
+            <p>${text}</p>
+        </div>
+    `;
+    
+    // Append to timeline
+    conversationTimeline.appendChild(timelineItem);
+    
+    // Also append to conversation text view
     const formattedText = `<div class="conversation-entry">
         <div class="timestamp">${timestamp}</div>
         <div class="text">${text}</div>
@@ -423,7 +591,8 @@ function updateConversationText(text) {
     
     conversationText.innerHTML += formattedText;
     
-    // Scroll to the bottom
+    // Scroll to newest message
+    timelineItem.scrollIntoView({ behavior: 'smooth', block: 'end' });
     conversationText.scrollTop = conversationText.scrollHeight;
 }
 
@@ -507,24 +676,61 @@ async function getAgentResponse(element, text, agentType) {
         
     } catch (error) {
         console.error(`Error getting ${agentType} response:`, error);
-        element.innerHTML = `Ошибка обработки`;
+        element.innerHTML = `Error processing`;
     }
 }
 
-// Инициализация визуализатора
-const visualizerInstance = new AdvancedVisualizer(visualizer, {
-    mode: 'waves+particles',
-    visualMode: 'spectrum',
-    particleCount: 200,
-    particleSize: 2,
-    murmurmationStrength: 0.3,
-    waveColor: '#4285f4',
-    backgroundColor: '#000',
-    particleColor: '#fff'
-});
+// Initialize visualizer
+let visualizerInstance;
+try {
+    visualizerInstance = new AdvancedVisualizer(visualizer, {
+        mode: 'waves+particles',
+        visualMode: 'spectrum',
+        particleCount: 150, 
+        particleSize: 3,
+        particleSpeed: 0.8,
+        murmurmationStrength: 0.4,
+        glowEffect: true,
+        backgroundColor: '#1a1a1a',
+        smoothingTimeConstant: 0.8,
+        gradientColors: [
+            { stop: 0, color: '#dc3545' },  // Changed to match red theme
+            { stop: 0.5, color: '#ff6b81' },
+            { stop: 1, color: '#dc3545' }
+        ],
+        waveThickness: 3
+    });
+    console.log('Visualizer initialized successfully');
+} catch (error) {
+    console.error('Error initializing visualizer:', error);
+    // Create fallback visualizer
+    visualizerInstance = {
+        setupAudioAnalyser: function() {},
+        stop: function() {},
+        setVisualMode: function() {},
+        setMode: function() {}
+    };
+}
+
+// Create and initialize the waveform visualization
+function createWaveformVisualization() {
+    const container = document.querySelector('.waveform-visualization');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    // Create animation lines
+    for (let i = 0; i < 60; i++) {
+        const line = document.createElement('div');
+        line.className = 'waveform-line';
+        line.style.height = `${Math.random() * 50 + 5}px`;
+        container.appendChild(line);
+    }
+}
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
+    createWaveformVisualization();
     const recordingSystem = AudioRecordingSystem();
     recordingSystem.init();
 }); 

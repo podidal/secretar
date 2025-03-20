@@ -3,90 +3,231 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Секретарь - Запись и распознавание разговоров</title>
+    <title>Speech Recording System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1>Секретарь</h1>
-            <p class="subtitle">Запись и распознавание разговоров</p>
+        <!-- Top Navigation Bar -->
+        <header class="header">
+            <div class="nav-left">
+                <button id="settings-toggle" class="icon-button">
+                    <i class="fas fa-cog"></i>
+                </button>
+                <h1>Диалоговая система</h1>
+            </div>
+            <div class="nav-center">
+                <div class="search-container">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" placeholder="Поиск..." class="search-input">
+                </div>
+            </div>
+            <div class="nav-right">
+                <button class="icon-button notification">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-badge">2</span>
+                </button>
+            </div>
         </header>
-
-        <main>
-            <section class="settings-section">
-                <h2>Настройки</h2>
-                <div class="settings-container">
-                    <div class="setting-item">
-                        <label for="sendFrequency">Частота отправки (секунды): <span id="frequencyValue">10</span></label>
-                        <input type="range" id="sendFrequency" min="5" max="60" step="5" value="10">
+        
+        <!-- Main Content Area -->
+        <main class="content">
+            <!-- Left Panel - Visualization -->
+            <section class="visualization-panel">
+                <div class="panel-header">
+                    <h2>Визуализация</h2>
+                </div>
+                
+                <div class="waveform-container">
+                    <div class="waveform-visualization"></div>
+                </div>
+                
+                <div id="visualizer-container">
+                    <canvas id="visualizer"></canvas>
+                </div>
+                
+                <div class="record-button-container">
+                    <button id="recordButton">
+                        <i class="fas fa-microphone"></i>
+                    </button>
+                    <div id="recordingStatus"></div>
+                    <div id="recordingTimer">00:00</div>
+                </div>
+            </section>
+            
+            <!-- Center Panel - Conversation Timeline -->
+            <section class="conversation-panel">
+                <div class="panel-header">
+                    <div class="tabs-container">
+                        <div class="tab active" data-tab="conversation">Беседа</div>
+                        <div class="tab" data-tab="text">Весь текст</div>
+                        <div class="tab" data-tab="summary">Итоги</div>
                     </div>
-                    <div class="setting-item">
-                        <label class="switch">
-                            <input type="checkbox" id="autoSendToggle" checked>
-                            <span class="slider round"></span>
-                            <span class="switch-label">Автоматическая отправка</span>
-                        </label>
+                </div>
+                
+                <!-- Conversation Timeline Tab -->
+                <div id="conversation-tab" class="timeline-container">
+                    <div id="conversationTimeline" class="conversation-timeline">
+                        <!-- Timeline items will be added here dynamically -->
+                    </div>
+                </div>
+                
+                <!-- Full Text Tab -->
+                <div id="text-tab" class="timeline-container" style="display: none;">
+                    <div id="conversationText" class="conversation-full-text">
+                        <!-- Full text will be added here dynamically -->
+                    </div>
+                </div>
+                
+                <!-- Summary Tab -->
+                <div id="summary-tab" class="timeline-container" style="display: none;">
+                    <div class="summary-container">
+                        <h3>Итоги разговора</h3>
+                        <div id="summary-text" class="summary-content">
+                            Здесь будет отображаться краткое резюме разговора после его завершения.
+                        </div>
                     </div>
                 </div>
             </section>
-
-            <section class="recorder-section">
-                <div class="recorder-container">
-                    <div class="visualizer-container">
-                        <canvas id="visualizer"></canvas>
-                    </div>
-                    <div class="recorder-controls">
-                        <button id="recordButton" class="btn record-btn">
-                            <span class="record-icon"></span>
-                            Начать запись
-                        </button>
-                        <div class="playback-controls">
-                            <button id="playButton" class="btn playback-btn" disabled>
-                                <span class="play-icon"></span>
-                                Прослушать
-                            </button>
-                            <button id="recognizeButton" class="btn recognize-btn" disabled>
-                                <span class="recognize-icon"></span>
-                                Распознать
+            
+            <!-- Right Panel - Agent Responses -->
+            <section class="agents-panel">
+                <div class="panel-header">
+                    <h2>Агенты</h2>
+                </div>
+                
+                <div class="agent-cards">
+                    <!-- Agent Card - Joker -->
+                    <div class="agent-card primary">
+                        <div class="agent-header">
+                            <div class="agent-icon">
+                                <i class="fas fa-laugh"></i>
+                            </div>
+                            <h3>Шутник</h3>
+                            <button class="expand-button">
+                                <i class="fas fa-chevron-down"></i>
                             </button>
                         </div>
-                        <div id="recordingStatus" class="recording-status">Готов к записи</div>
-                        <div id="recordingTimer" class="recording-timer">00:00</div>
+                        <div class="agent-content" id="agent-joker">
+                            Ждем вашего сообщения...
+                        </div>
                     </div>
-                </div>
-            </section>
-
-            <section class="conversation-section">
-                <h2>Распознанный текст</h2>
-                <div id="recognitionStatus" class="recognition-status"></div>
-                <div id="conversationText" class="conversation-text"></div>
-            </section>
-
-            <section class="agents-section">
-                <h2>Комментарии ИИ-агентов</h2>
-                <div class="agents-container">
-                    <div class="agent-card">
-                        <h3>Шутник</h3>
-                        <div class="agent-response" id="agent-joker"></div>
+                    
+                    <!-- Agent Card - Skeptic -->
+                    <div class="agent-card secondary">
+                        <div class="agent-header">
+                            <div class="agent-icon">
+                                <i class="fas fa-question-circle"></i>
+                            </div>
+                            <h3>Скептик</h3>
+                            <button class="expand-button">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                        </div>
+                        <div class="agent-content" id="agent-skeptic">
+                            Ждем вашего сообщения...
+                        </div>
                     </div>
-                    <div class="agent-card">
-                        <h3>Скептик</h3>
-                        <div class="agent-response" id="agent-skeptic"></div>
-                    </div>
-                    <div class="agent-card">
-                        <h3>Умник</h3>
-                        <div class="agent-response" id="agent-smart"></div>
+                    
+                    <!-- Agent Card - Smart -->
+                    <div class="agent-card tertiary">
+                        <div class="agent-header">
+                            <div class="agent-icon">
+                                <i class="fas fa-brain"></i>
+                            </div>
+                            <h3>Умник</h3>
+                            <button class="expand-button">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                        </div>
+                        <div class="agent-content" id="agent-smart">
+                            Ждем вашего сообщения...
+                        </div>
                     </div>
                 </div>
             </section>
         </main>
-
-        <footer>
-            <p>© 2023 Секретарь - Приложение для записи и распознавания разговоров</p>
+        
+        <!-- Footer with Playback Controls -->
+        <footer class="footer">
+            <div class="playback-controls">
+                <button id="playButton" disabled>
+                    <i class="fas fa-play"></i> Прослушать
+                </button>
+                <button id="recognizeButton" disabled>
+                    <i class="fas fa-language"></i> Распознать
+                </button>
+            </div>
+            <audio id="audioPlayer" controls style="display: none;"></audio>
+            <div class="copyright">© 2023 XC Dialogue System</div>
         </footer>
     </div>
-
+    
+    <!-- Settings Panel (Hidden by default) -->
+    <div id="settings-panel" class="settings-panel">
+        <div class="settings-header">
+            <h2>Настройки</h2>
+            <button id="close-settings">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="settings-content">
+            <!-- Recording Settings -->
+            <div class="settings-section">
+                <h3>Запись и распознавание</h3>
+                
+                <div class="setting-item">
+                    <label for="sendFrequency">Частота отправки (сек):</label>
+                    <div class="slider-container">
+                        <input type="range" id="sendFrequency" min="5" max="60" value="10" class="slider">
+                        <span id="frequencyValue">10</span>
+                    </div>
+                </div>
+                
+                <div class="setting-item">
+                    <label for="autoSendToggle">Автоматическая отправка:</label>
+                    <label class="switch">
+                        <input type="checkbox" id="autoSendToggle" checked>
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+            </div>
+            
+            <!-- Visualization Settings -->
+            <div class="settings-section">
+                <h3>Визуализация</h3>
+                
+                <div class="setting-item">
+                    <label for="visualizerMode">Режим визуализации:</label>
+                    <select id="visualizerMode">
+                        <option value="spectrum">Спектр</option>
+                        <option value="waveform">Волновая форма</option>
+                        <option value="circular">Круговой</option>
+                    </select>
+                </div>
+                
+                <div class="setting-item">
+                    <label for="effectMode">Эффект:</label>
+                    <select id="effectMode">
+                        <option value="waves+particles">Волны + Частицы</option>
+                        <option value="waves">Только волны</option>
+                        <option value="particles">Только частицы</option>
+                    </select>
+                </div>
+                
+                <div class="setting-item">
+                    <label for="visualizerToggle">Показывать визуализатор:</label>
+                    <label class="switch">
+                        <input type="checkbox" id="visualizerToggle" checked>
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <script src="visualizer.js"></script>
     <script src="script.js"></script>
 </body>

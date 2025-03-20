@@ -24,18 +24,25 @@ class AdvancedVisualizer {
         
         // Настройки по умолчанию
         this.options = {
-            waveColor: options.waveColor || '#4285f4',
-            backgroundColor: options.backgroundColor || '#000',
+            waveColor: options.waveColor || 'rgba(66, 133, 244, 0.8)', // Более прозрачный Google Blue
+            backgroundColor: options.backgroundColor || '#1a1a1a', // Темно-серый фон
             particleColor: options.particleColor || '#fff',
-            particleCount: options.particleCount || 300,
-            particleSize: options.particleSize || 2,
-            particleSpeed: options.particleSpeed || 1,
-            murmurmationStrength: options.murmurmationStrength || 0.5,
-            mode: options.mode || 'waves+particles', // 'waves', 'particles', 'waves+particles'
-            waveThickness: options.waveThickness || 2,
-            waveGap: options.waveGap || 2,
+            particleCount: options.particleCount || 150, // Меньше частиц для более чистого вида
+            particleSize: options.particleSize || 3, // Чуть крупнее частицы
+            particleSpeed: options.particleSpeed || 0.8, // Более плавное движение
+            murmurmationStrength: options.murmurmationStrength || 0.4,
+            mode: options.mode || 'waves+particles',
+            waveThickness: options.waveThickness || 3, // Более толстые линии
+            waveGap: options.waveGap || 3,
             frequencyRange: options.frequencyRange || { min: 20, max: 20000 },
-            visualMode: options.visualMode || 'spectrum' // 'spectrum', 'waveform', 'circular'
+            visualMode: options.visualMode || 'spectrum',
+            glowEffect: options.glowEffect !== undefined ? options.glowEffect : true, // Добавляем свечение
+            smoothingTimeConstant: options.smoothingTimeConstant || 0.8, // Более плавная анимация
+            gradientColors: options.gradientColors || [
+                { stop: 0, color: '#FF0099' },
+                { stop: 0.5, color: '#00FF99' },
+                { stop: 1, color: '#6600FF' }
+            ]
         };
         
         // Инициализация аудио-анализатора
@@ -76,19 +83,39 @@ class AdvancedVisualizer {
      * @param {MediaStream} stream - поток с микрофона
      */
     setupAudioAnalyser(stream) {
-        if (!this.audioContext) {
+        try {
+            // Закрываем предыдущий аудио контекст если он существует
+            if (this.audioContext) {
+                this.audioContext.close();
+            }
+            
+            // Создаем новый аудио контекст
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            
+            // Создаем источник из потока
+            const source = this.audioContext.createMediaStreamSource(stream);
+            
+            // Создаем анализатор
+            this.analyser = this.audioContext.createAnalyser();
+            this.analyser.fftSize = 2048; // Более детальный анализ
+            
+            // Настраиваем сглаживание для более плавной анимации
+            this.analyser.smoothingTimeConstant = this.options.smoothingTimeConstant;
+            
+            // Подготавливаем буфер данных
+            this.bufferLength = this.analyser.frequencyBinCount;
+            this.dataArray = new Uint8Array(this.bufferLength);
+            
+            // Подключаем источник к анализатору
+            source.connect(this.analyser);
+            
+            // Активируем визуализацию
+            this.isPlaying = true;
+            console.log('Аудио анализатор успешно настроен');
+        } catch (error) {
+            console.error('Ошибка настройки аудио анализатора:', error);
+            throw new Error('Не удалось настроить аудио анализатор: ' + error.message);
         }
-        
-        const source = this.audioContext.createMediaStreamSource(stream);
-        this.analyser = this.audioContext.createAnalyser();
-        this.analyser.fftSize = 2048;
-        
-        this.bufferLength = this.analyser.frequencyBinCount;
-        this.dataArray = new Uint8Array(this.bufferLength);
-        
-        source.connect(this.analyser);
-        this.isPlaying = true;
     }
     
     /**
@@ -205,9 +232,16 @@ class AdvancedVisualizer {
         for (const p of this.particles) {
             this.ctx.beginPath();
             
-            // Создаем градиент для каждой частицы
+            // Добавляем свечение для частиц
+            if (this.options.glowEffect) {
+                this.ctx.shadowBlur = 10;
+                this.ctx.shadowColor = `hsla(${p.hue}, 100%, 70%, ${p.opacity})`;
+            }
+            
+            // Улучшенный градиент для частиц
             const gradient = this.ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size);
             gradient.addColorStop(0, `hsla(${p.hue}, 100%, 70%, ${p.opacity})`);
+            gradient.addColorStop(0.5, `hsla(${p.hue}, 100%, 60%, ${p.opacity * 0.5})`);
             gradient.addColorStop(1, `hsla(${p.hue}, 100%, 50%, 0)`);
             
             this.ctx.fillStyle = gradient;
@@ -266,37 +300,89 @@ class AdvancedVisualizer {
     }
     
     /**
-     * Рисует спектр частот
+     * Рисует спектр частот с закругленными столбиками
      */
     drawSpectrumWaves() {
-        const barWidth = (this.canvas.width / this.bufferLength) * 2.5;
+        const barWidth = (this.canvas.width / this.bufferLength) * 1.5; // Тоньше полосы
         let x = 0;
         
-        // Создаем эффект полноэкранного спектра
+        // Создаем градиент
         const gradient = this.ctx.createLinearGradient(0, this.canvas.height, 0, 0);
-        gradient.addColorStop(0, '#0575E6');
-        gradient.addColorStop(1, '#00F260');
+        this.options.gradientColors.forEach(({stop, color}) => {
+            gradient.addColorStop(stop, color);
+        });
         
-        // Рисуем каждую полосу
+        // Добавляем свечение
+        if (this.options.glowEffect) {
+            this.ctx.shadowBlur = 15;
+            this.ctx.shadowColor = this.options.gradientColors[0].color;
+        }
+        
         for (let i = 0; i < this.bufferLength; i++) {
-            const barHeight = (this.dataArray[i] / 255) * this.canvas.height * 0.8;
+            const barHeight = (this.dataArray[i] / 255) * this.canvas.height * 0.7;
             
-            // Динамический цвет в зависимости от частоты и громкости
+            // Плавный переход цветов
             const hue = i / this.bufferLength * 360;
-            const saturation = 80 + (this.dataArray[i] / 255) * 20;
-            const lightness = 50 + (this.dataArray[i] / 255) * 10;
-            this.ctx.fillStyle = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+            this.ctx.fillStyle = gradient;
             
-            // Рисуем столбик
-            this.ctx.fillRect(x, this.canvas.height - barHeight, barWidth - 1, barHeight);
+            // Рисуем закругленные столбики 
+            this.ctx.beginPath();
+            if (typeof this.ctx.roundRect === 'function') {
+                // Для современных браузеров с поддержкой roundRect
+                this.ctx.roundRect(
+                    x, 
+                    this.canvas.height - barHeight, 
+                    barWidth - 2, 
+                    barHeight, 
+                    [barWidth/2]
+                );
+            } else {
+                // Запасной вариант для старых браузеров
+                this.drawRoundedBar(
+                    x, 
+                    this.canvas.height - barHeight, 
+                    barWidth - 2, 
+                    barHeight, 
+                    barWidth/2
+                );
+            }
+            this.ctx.fill();
             
-            // Рисуем зеркальное отражение (как в аудиоредакторах)
-            const mirrorHeight = barHeight * 0.3;
-            this.ctx.fillStyle = `hsla(${hue}, ${saturation}%, ${lightness + 20}%, 0.5)`;
-            this.ctx.fillRect(x, 0, barWidth - 1, mirrorHeight);
+            // Добавляем блик
+            const highlight = this.ctx.createLinearGradient(
+                x, 
+                this.canvas.height - barHeight, 
+                x + barWidth - 2, 
+                this.canvas.height
+            );
+            highlight.addColorStop(0, 'rgba(255, 255, 255, 0.1)');
+            highlight.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            this.ctx.fillStyle = highlight;
+            this.ctx.fill();
             
             x += barWidth;
         }
+        
+        // Сбрасываем свечение
+        if (this.options.glowEffect) {
+            this.ctx.shadowBlur = 0;
+        }
+    }
+    
+    /**
+     * Вспомогательный метод для рисования закругленных прямоугольников
+     * в браузерах без поддержки ctx.roundRect
+     */
+    drawRoundedBar(x, y, width, height, radius) {
+        this.ctx.beginPath();
+        this.ctx.moveTo(x + radius, y);
+        this.ctx.lineTo(x + width - radius, y);
+        this.ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+        this.ctx.lineTo(x + width, y + height);
+        this.ctx.lineTo(x, y + height);
+        this.ctx.lineTo(x, y + radius);
+        this.ctx.quadraticCurveTo(x, y, x + radius, y);
+        this.ctx.closePath();
     }
     
     /**
